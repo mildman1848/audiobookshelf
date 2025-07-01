@@ -11,10 +11,12 @@ ARG AUDIOBOOKSHELF_RELEASE
 
 WORKDIR /build
 RUN apk add --no-cache git curl sed && \
-    if [ -z "${AUDIOBOOKSHELF_RELEASE}" ]; then \
-      AUDIOBOOKSHELF_RELEASE=$(curl -sL "https://api.github.com/repos/advplyr/audiobookshelf/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); \
+    RELEASE="${AUDIOBOOKSHELF_RELEASE}" && \
+    if [ -z "$RELEASE" ]; then \
+      RELEASE=$(curl -sL "https://api.github.com/repos/advplyr/audiobookshelf/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); \
     fi && \
-    git clone --depth=1 --branch "${AUDIOBOOKSHELF_RELEASE}" https://github.com/advplyr/audiobookshelf.git src
+    echo "Cloning audiobookshelf branch: $RELEASE" && \
+    git clone --depth=1 --branch "$RELEASE" https://github.com/advplyr/audiobookshelf.git src
 WORKDIR /build/src/client
 RUN npm ci && npm cache clean --force
 RUN npm run generate
@@ -27,11 +29,13 @@ ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG TARGETPLATFORM
 
 WORKDIR /build
-RUN apk add --no-cache --update git curl make python3 g++ unzip
-RUN if [ -z "${AUDIOBOOKSHELF_RELEASE}" ]; then \
-      AUDIOBOOKSHELF_RELEASE=$(curl -sL "https://api.github.com/repos/advplyr/audiobookshelf/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); \
+RUN apk add --no-cache --update git curl make python3 g++ unzip sed && \
+    RELEASE="${AUDIOBOOKSHELF_RELEASE}" && \
+    if [ -z "$RELEASE" ]; then \
+      RELEASE=$(curl -sL "https://api.github.com/repos/advplyr/audiobookshelf/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); \
     fi && \
-    git clone --depth=1 --branch "${AUDIOBOOKSHELF_RELEASE}" https://github.com/advplyr/audiobookshelf.git src
+    echo "Cloning audiobookshelf branch: $RELEASE" && \
+    git clone --depth=1 --branch "$RELEASE" https://github.com/advplyr/audiobookshelf.git src
 
 WORKDIR /build/src/server
 RUN case "$TARGETPLATFORM" in \
@@ -67,7 +71,7 @@ ENV LANG="en_US.UTF-8" \
     NUSQLITE3_DIR=${NUSQLITE3_DIR} \
     NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
-RUN apk add --no-cache --update tzdata ffmpeg
+RUN apk add --no-cache --update tzdata ffmpeg su-exec
 
 WORKDIR /app
 
