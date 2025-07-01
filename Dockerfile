@@ -84,9 +84,8 @@ COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 # Add s6-overlay service, secrets etc.
 COPY root/ /
 
-RUN chmod -R +x /etc/cont-init.d /etc/services.d || true \
-    && find /etc/cont-init.d/ -type f -exec dos2unix {} \; \
-    && find /etc/services.d/ -type f -exec dos2unix {} \; \
+RUN chmod -R +x /etc/ || true \
+    && find /etc/ -type f -exec dos2unix {} \; \
     && chown -R abc:abc /app
 
 EXPOSE 80

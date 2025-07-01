@@ -1,5 +1,0 @@
-#!/usr/bin/with-contenv sh
-# English: Simple healthcheck script for Audiobookshelf.
-# Deutsch: Einfaches Healthcheck-Skript für Audiobookshelf.
-
-echo "[INFO] Audiobookshelf container started successfully."
