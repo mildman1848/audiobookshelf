@@ -16,7 +16,7 @@ ENV LANG="en_US.UTF-8" \
   S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
   PUID=911 \
   PGID=911 \
-  APP_VERSION=v2.15.0 
+  APP_VERSION=v2.15.0
 
 # --- Install dependencies ---
 RUN apk add --no-cache \
@@ -28,7 +28,8 @@ RUN apk add --no-cache \
   ca-certificates \
   bash \
   git \
-  tzdata
+  tzdata \
+  dos2unix
 
 # --- Install s6-overlay (v3) ---
 ENV S6_OVERLAY_VERSION=v3.1.6.2
@@ -36,8 +37,8 @@ ENV S6_OVERLAY_VERSION=v3.1.6.2
 ADD https://github.com/just-containers/s6-overlay/releases/download/${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp/
 ADD https://github.com/just-containers/s6-overlay/releases/download/${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp/
 RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz && \
-  tar -C / -Jxpf /tmp/s6-overlay-x86_64.tar.xz && \
-  rm -f /tmp/s6-overlay-*.tar.xz
+    tar -C / -Jxpf /tmp/s6-overlay-x86_64.tar.xz && \
+    rm -f /tmp/s6-overlay-*.tar.xz
 
 # --- Add user/group abc ---
 RUN addgroup -g 911 abc && adduser -D -u 911 -G abc abc
@@ -50,8 +51,10 @@ RUN git clone --depth=1 --branch ${APP_VERSION} https://github.com/advplyr/audio
 # --- Copy LSIO-style init and service scripts ---
 COPY ./root/ /
 
-# --- Fix permissions for scripts (Windows/Git compatibility) ---
-RUN chmod -R +x /etc/cont-init.d /etc/services.d || true
+# --- Fix permissions and convert to Unix line endings (Windows compatibility) ---
+RUN chmod -R +x /etc/cont-init.d /etc/services.d || true && \
+    find /etc/cont-init.d/ -type f -exec dos2unix {} \; && \
+    find /etc/services.d/ -type f -exec dos2unix {} \;
 
 # --- Set permissions for app ---
 RUN chown -R abc:abc /app
