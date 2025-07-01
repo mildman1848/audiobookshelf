@@ -41,10 +41,5 @@ RUN \
 # copy local files (LSIO-style: s6-overlay, secrets, etc.)
 COPY root/ /
 
-RUN chown -R abc:abc /app
-
 EXPOSE 80
 VOLUME /config
-
-USER abc
-WORKDIR /app/audiobookshelf
