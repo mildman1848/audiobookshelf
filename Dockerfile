@@ -10,8 +10,8 @@ FROM node:20-alpine AS build-client
 ARG AUDIOBOOKSHELF_RELEASE
 
 WORKDIR /build
-RUN apk add --no-cache git
-RUN if [ -z "${AUDIOBOOKSHELF_RELEASE}" ]; then \
+RUN apk add --no-cache git curl sed && \
+    if [ -z "${AUDIOBOOKSHELF_RELEASE}" ]; then \
       AUDIOBOOKSHELF_RELEASE=$(curl -sL "https://api.github.com/repos/advplyr/audiobookshelf/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); \
     fi && \
     git clone --depth=1 --branch "${AUDIOBOOKSHELF_RELEASE}" https://github.com/advplyr/audiobookshelf.git src

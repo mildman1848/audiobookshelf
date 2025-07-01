@@ -10,7 +10,7 @@ FROM --platform=linux/arm64 node:20-alpine AS build-client
 ARG AUDIOBOOKSHELF_RELEASE
 
 WORKDIR /build
-RUN apk add --no-cache git
+RUN apk add --no-cache git curl sed
 RUN if [ -z "${AUDIOBOOKSHELF_RELEASE}" ]; then \
       AUDIOBOOKSHELF_RELEASE=$(curl -sL "https://api.github.com/repos/advplyr/audiobookshelf/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); \
     fi && \
