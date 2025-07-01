@@ -1,0 +1,25 @@
+# .github/workflows/docker-scan.yml
+
+name: Scan Docker Image for Vulnerabilities
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: audiobookshelf:scan
+          load: true
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: 'audiobookshelf:scan'

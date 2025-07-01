@@ -1,0 +1,48 @@
+# .github/workflows/docker-build-test.yml
+
+name: Build & Test Docker Image
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: audiobookshelf:test
+          load: true
+
+      - name: Run container for test
+        run: |
+          docker run -d --name audiobookshelf-test -p 13378:80 audiobookshelf:test
+          sleep 20
+          docker ps -a
+          docker logs audiobookshelf-test
+
+      - name: "Test: Is Audiobookshelf running?"
+        run: |
+          curl --fail --retry 5 --retry-delay 5 http://localhost:13378 || (echo "Audiobookshelf did not start" && exit 1)
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f audiobookshelf-test || true
