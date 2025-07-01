@@ -3,7 +3,7 @@
 # English: LSIO-style Dockerfile for Audiobookshelf – pulls app code at build time, uses Alpine + s6-overlay, Docker Secrets, abc user, EN/DE ready.
 # Deutsch: LSIO-Style Dockerfile für Audiobookshelf – zieht App-Code beim Build, nutzt Alpine + s6-overlay, Docker Secrets, User abc, EN/DE-fähig.
 
-FROM alpine:3.20
+FROM alpine:3.22
 
 LABEL maintainer="Mildman1848 <mildman@mailbox.org>"
 LABEL org.opencontainers.image.source="https://github.com/advplyr/audiobookshelf"
