@@ -1,5 +1,3 @@
-# .github/workflows/docker-push.yml
-
 name: Build & Push Docker Image
 
 on:
@@ -40,4 +38,6 @@ jobs:
           push: true
           tags: |
             mildman1848/audiobookshelf:latest
+            mildman1848/audiobookshelf:${{ github.ref_name }}
             ghcr.io/${{ github.repository_owner }}/audiobookshelf:latest
+            ghcr.io/${{ github.repository_owner }}/audiobookshelf:${{ github.ref_name }}

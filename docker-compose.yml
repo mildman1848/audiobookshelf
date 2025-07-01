@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  audiobookshelf:
+    image: mildman1848/audiobookshelf:latest
+    container_name: audiobookshelf
+    environment:
+      - TZ=Europe/Berlin
+      - PUID=1000
+      - PGID=1000
+      - LANG=en_US.UTF-8
+      - LANGUAGE=en_US:de_DE
+      - LC_ALL=en_US.UTF-8
+      # Beispiel für eigene Umgebungsvariablen:
+      # - AUDIOBOOKSHELF_CUSTOM=xyz
+    ports:
+      - 13378:80
+    volumes:
+      - ./config:/config
+      - ./audiobooks:/audiobooks
+      - ./metadata:/metadata
+    secrets:
+      - AUDIOBOOKSHELF_ADMIN_PASSWORD
+    restart: unless-stopped
+
+secrets:
+  AUDIOBOOKSHELF_ADMIN_PASSWORD:
+    file: ./secrets/admin_password.txt

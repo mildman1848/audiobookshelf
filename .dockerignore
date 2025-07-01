@@ -1,47 +1,6 @@
-# .dockerignore
-
-# Ignore git and editor files
 .git
 .gitignore
+.github
 .gitattributes
-.github/
-
-# Node/build caches
-node_modules/
-npm-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# System/IDE junk
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.iml
-
-# Build/test output
-dist/
-build/
-out/
-tmp/
-temp/
-coverage/
-__tests__/
-test/
-tests/
-
-# Env and secrets
-.env
-.env.*
-secrets/
-run/secrets/
-
-# Docker Compose, dev only
-docker-compose.yml
-docker-compose.*.yml
-
-# Optional: Only include what's needed
-# !Dockerfile
-# !root/
-# !README.md
-# !CHANGELOG.md
+READMETEMPLATE.md
+README.md
