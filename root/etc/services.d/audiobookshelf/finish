@@ -1,0 +1,5 @@
+#!/usr/bin/with-contenv sh
+# English: This script runs after the audiobookshelf service exits; always returns 0 to allow auto-restart.
+# Deutsch: Wird nach Beendigung des Audiobookshelf-Dienstes ausgeführt; gibt immer 0 zurück für Neustart.
+
+exit 0
