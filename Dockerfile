@@ -42,12 +42,7 @@ RUN \
 # copy local files (s6-overlay service/init, etc.)
 COPY root/ /
 
-# permissions (LSIO abc user)
-RUN chown -R abc:abc /app
-
 # ports and volumes
 EXPOSE 80
 VOLUME /config
-
-USER abc
 WORKDIR /app/audiobookshelf
