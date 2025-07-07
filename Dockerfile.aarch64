@@ -5,7 +5,7 @@
 ARG AUDIOBOOKSHELF_RELEASE
 
 ### STAGE 0: Build client ###
-FROM --platform=linux/arm64 node:20-alpine AS build-client
+FROM --platform=linux/arm64 node:24-alpine AS build-client
 
 ARG AUDIOBOOKSHELF_RELEASE
 
@@ -22,7 +22,7 @@ RUN npm ci && npm cache clean --force
 RUN npm run generate
 
 ### STAGE 1: Build server ###
-FROM --platform=linux/arm64 node:20-alpine AS build-server
+FROM --platform=linux/arm64 node:24-alpine AS build-server
 
 ARG AUDIOBOOKSHELF_RELEASE
 ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
