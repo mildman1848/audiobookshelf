@@ -20,6 +20,6 @@ jobs:
           tags: audiobookshelf:scan
           load: true
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@0.32.0
         with:
           image-ref: 'audiobookshelf:scan'
