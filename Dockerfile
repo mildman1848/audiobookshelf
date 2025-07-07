@@ -7,7 +7,7 @@ ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
 ### STAGE 0: Build client ###
-FROM node:20-alpine AS build-client
+FROM node:24-alpine AS build-client
 
 ARG AUDIOBOOKSHELF_RELEASE
 
@@ -24,7 +24,7 @@ RUN npm ci && npm cache clean --force
 RUN npm run generate
 
 ### STAGE 1: Build server ###
-FROM node:20-alpine AS build-server
+FROM node:24-alpine AS build-server
 
 ARG NUSQLITE3_DIR
 ARG TARGETPLATFORM
