@@ -1,0 +1,39 @@
+version: 2
+updates:
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "mildman1848"
+    assignees:
+      - "mildman1848"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Docker dependencies (for base image updates)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "mildman1848"
+    assignees:
+      - "mildman1848"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Monitor Makefile and shell scripts for security updates
+  # Note: Dependabot doesn't directly support Makefiles, but we can monitor
+  # the repository for changes to dependencies mentioned in documentation

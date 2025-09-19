@@ -1,0 +1,321 @@
+# Audiobookshelf Docker Image Makefile
+# Based on LinuxServer.io best practices
+
+# Variables
+DOCKER_REPO = mildman1848/audiobookshelf
+VERSION ?= latest
+BUILD_DATE := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+VCS_REF := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+AUDIOBOOKSHELF_VERSION ?= v2.29.0
+
+# Platform support for multi-architecture builds
+PLATFORMS = linux/amd64,linux/arm64,linux/arm/v7
+
+# Docker commands with error checking
+DOCKER = docker
+BUILDX = docker buildx
+COMPOSE = docker-compose
+
+# Colors for output
+RED = \033[0;31m
+GREEN = \033[0;32m
+YELLOW = \033[0;33m
+BLUE = \033[0;34m
+NC = \033[0m # No Color
+
+.PHONY: help build build-multiarch push test clean lint validate security-scan secrets-generate secrets-rotate secrets-clean secrets-info env-setup env-validate setup
+
+# Default target
+all: help
+
+## Help target
+help: ## Show this help message
+	@echo "$(BLUE)Audiobookshelf Docker Image Build System$(NC)"
+	@echo ""
+	@echo "$(GREEN)Available targets:$(NC)"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "$(GREEN)Variables:$(NC)"
+	@echo "  $(YELLOW)DOCKER_REPO$(NC)           Repository name (default: $(DOCKER_REPO))"
+	@echo "  $(YELLOW)VERSION$(NC)               Version tag (default: $(VERSION))"
+	@echo "  $(YELLOW)AUDIOBOOKSHELF_VERSION$(NC) Audiobookshelf version (default: $(AUDIOBOOKSHELF_VERSION))"
+	@echo "  $(YELLOW)PLATFORMS$(NC)             Target platforms (default: $(PLATFORMS))"
+
+## Build targets
+build: ## Build Docker image for current platform
+	@echo "$(GREEN)Building Docker image...$(NC)"
+	$(DOCKER) build \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg VCS_REF="$(VCS_REF)" \
+		--build-arg AUDIOBOOKSHELF_VERSION="$(AUDIOBOOKSHELF_VERSION)" \
+		--tag $(DOCKER_REPO):$(VERSION) \
+		--tag $(DOCKER_REPO):latest \
+		.
+	@echo "$(GREEN)Build completed successfully!$(NC)"
+
+build-multiarch: ## Build multi-architecture Docker image
+	@echo "$(GREEN)Building multi-architecture Docker image...$(NC)"
+	$(BUILDX) build \
+		--platform $(PLATFORMS) \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg VCS_REF="$(VCS_REF)" \
+		--build-arg AUDIOBOOKSHELF_VERSION="$(AUDIOBOOKSHELF_VERSION)" \
+		--tag $(DOCKER_REPO):$(VERSION) \
+		--tag $(DOCKER_REPO):latest \
+		--push \
+		.
+	@echo "$(GREEN)Multi-architecture build completed successfully!$(NC)"
+
+## Test targets
+test: ## Test the Docker image
+	@echo "$(GREEN)Testing Docker image...$(NC)"
+	@echo "Creating test directories..."
+	@mkdir -p /tmp/audiobookshelf-test-{config,audiobooks,podcasts,metadata}
+	@echo "Starting container for testing..."
+	$(DOCKER) run -d \
+		--name audiobookshelf-test \
+		--rm \
+		-p 13378:80 \
+		-v /tmp/audiobookshelf-test-config:/config \
+		-v /tmp/audiobookshelf-test-audiobooks:/audiobooks \
+		-v /tmp/audiobookshelf-test-podcasts:/podcasts \
+		-v /tmp/audiobookshelf-test-metadata:/metadata \
+		-e PUID=$(shell id -u) \
+		-e PGID=$(shell id -g) \
+		--health-cmd="curl -f http://localhost:80/ping || exit 1" \
+		--health-interval=10s \
+		--health-timeout=5s \
+		--health-retries=3 \
+		$(DOCKER_REPO):$(VERSION)
+	@echo "Waiting for container to be healthy..."
+	@timeout 60 sh -c 'until [ "$$($(DOCKER) inspect --format="{{.State.Health.Status}}" audiobookshelf-test)" = "healthy" ]; do sleep 2; done' || \
+		(echo "$(RED)✗ Container failed to become healthy$(NC)"; \
+		$(DOCKER) logs audiobookshelf-test; \
+		$(DOCKER) stop audiobookshelf-test; \
+		exit 1)
+	@echo "$(GREEN)✓ Health check passed$(NC)"
+	@echo "Testing API endpoint..."
+	@curl -f http://localhost:13378/ping >/dev/null 2>&1 || \
+		(echo "$(RED)✗ API endpoint test failed$(NC)"; \
+		$(DOCKER) logs audiobookshelf-test; \
+		$(DOCKER) stop audiobookshelf-test; \
+		exit 1)
+	@echo "$(GREEN)✓ API endpoint test passed$(NC)"
+	@echo "Stopping test container..."
+	@$(DOCKER) stop audiobookshelf-test
+	@echo "Cleaning up test directories..."
+	@rm -rf /tmp/audiobookshelf-test-*
+	@echo "$(GREEN)All tests passed!$(NC)"
+
+## Security and validation targets
+security-scan: ## Run security scan on the image
+	@echo "$(GREEN)Running security scan...$(NC)"
+	@command -v trivy >/dev/null 2>&1 && \
+		trivy image $(DOCKER_REPO):$(VERSION) || \
+		(echo "$(YELLOW)Trivy not installed, skipping security scan$(NC)"; \
+		echo "Install Trivy for security scanning: https://trivy.dev/")
+
+validate: ## Validate Dockerfile and configuration
+	@echo "$(GREEN)Validating Dockerfile...$(NC)"
+	@command -v hadolint >/dev/null 2>&1 && \
+		(hadolint Dockerfile; echo "$(GREEN)✓ Dockerfile validation passed$(NC)") || \
+		(echo "$(YELLOW)Hadolint not installed, skipping Dockerfile validation$(NC)"; \
+		echo "Install Hadolint for Dockerfile validation: https://github.com/hadolint/hadolint")
+
+lint: validate ## Alias for validate
+
+## Deployment targets
+push: ## Push image to registry
+	@echo "$(GREEN)Pushing Docker image to registry...$(NC)"
+	$(DOCKER) push $(DOCKER_REPO):$(VERSION)
+	$(DOCKER) push $(DOCKER_REPO):latest
+	@echo "$(GREEN)Push completed successfully!$(NC)"
+
+## Utility targets
+clean: ## Clean up Docker artifacts
+	@echo "$(GREEN)Cleaning up Docker artifacts...$(NC)"
+	$(DOCKER) image prune -f
+	$(DOCKER) container prune -f
+	@echo "$(GREEN)Cleanup completed!$(NC)"
+
+clean-all: ## Remove all related Docker images and containers
+	@echo "$(GREEN)Removing all audiobookshelf Docker artifacts...$(NC)"
+	-@$(DOCKER) stop `$(DOCKER) ps -q --filter ancestor=$(DOCKER_REPO)` 2>/dev/null || true
+	-@$(DOCKER) rmi `$(DOCKER) images $(DOCKER_REPO) -q` 2>/dev/null || true
+	@echo "$(GREEN)Complete cleanup finished!$(NC)"
+
+## Development targets
+dev: ## Build and run for development
+	@echo "$(GREEN)Building and starting development container...$(NC)"
+	$(MAKE) build
+	$(DOCKER) run -it --rm \
+		--name audiobookshelf-dev \
+		-p 13378:80 \
+		-v $(PWD)/test-data/config:/config \
+		-v $(PWD)/test-data/audiobooks:/audiobooks \
+		-v $(PWD)/test-data/podcasts:/podcasts \
+		-v $(PWD)/test-data/metadata:/metadata \
+		$(DOCKER_REPO):$(VERSION)
+
+shell: ## Get shell access to running container
+	@echo "$(GREEN)Opening shell in audiobookshelf container...$(NC)"
+	$(DOCKER) exec -it `$(DOCKER) ps -q --filter ancestor=$(DOCKER_REPO)` /bin/bash
+
+logs: ## Show logs from running container
+	@echo "$(GREEN)Showing logs from audiobookshelf container...$(NC)"
+	$(DOCKER) logs -f `$(DOCKER) ps -q --filter ancestor=$(DOCKER_REPO)`
+
+## Release targets
+release: validate build test security-scan ## Complete release workflow
+	@echo "$(GREEN)Release workflow completed successfully!$(NC)"
+	@echo "To push to registry, run: make push"
+
+## Secrets management targets
+secrets-generate: ## Generate secure secrets for audiobookshelf
+	@echo "$(GREEN)Generating secure secrets...$(NC)"
+	@mkdir -p secrets
+	@echo "Generating JWT secret (512 bits)..."
+	@openssl rand -base64 64 | tr -d '\n' > secrets/jwt_secret.txt
+	@echo "Generating API key (256 bits hex)..."
+	@openssl rand -hex 32 | tr -d '\n' > secrets/api_key.txt
+	@echo "Generating database password (strong 32 chars)..."
+	@openssl rand -base64 32 | tr -d "=+/\n" | head -c 32 > secrets/db_password.txt
+	@echo -n "audiobookshelf" > secrets/db_user.txt
+	@echo "Generating backup encryption key..."
+	@openssl rand -base64 32 | tr -d '\n' > secrets/backup_key.txt
+	@echo "Generating session secret..."
+	@openssl rand -base64 32 | tr -d '\n' > secrets/session_secret.txt
+	@chmod 600 secrets/*.txt
+	@chown $(shell id -u):$(shell id -g) secrets/*.txt 2>/dev/null || true
+	@echo "$(GREEN)✓ Secrets generated successfully!$(NC)"
+	@echo "$(YELLOW)⚠️  Keep these secrets secure and never commit them to version control!$(NC)"
+	@echo "$(BLUE)Generated secrets:$(NC)"
+	@ls -la secrets/*.txt | awk '{print "  " $$9 " (" $$5 " bytes)"}'
+
+secrets-rotate: ## Rotate existing secrets (keeps backups)
+	@echo "$(GREEN)Rotating secrets...$(NC)"
+	@test -d "secrets" && \
+		(echo "Creating backup of existing secrets..."; \
+		mkdir -p secrets/backup-$(shell date +%Y%m%d-%H%M%S); \
+		cp secrets/*.txt secrets/backup-$(shell date +%Y%m%d-%H%M%S)/ 2>/dev/null || true) || true
+	@$(MAKE) secrets-generate
+	@echo "$(GREEN)✓ Secrets rotated successfully!$(NC)"
+	@echo "$(YELLOW)⚠️  Update your running containers with the new secrets!$(NC)"
+
+secrets-clean: ## Clean up old secret backups (keeps last 5)
+	@echo "$(GREEN)Cleaning up old secret backups...$(NC)"
+	@test -d "secrets" && \
+		(cd secrets && ls -dt backup-* 2>/dev/null | tail -n +6 | xargs rm -rf 2>/dev/null || true; \
+		echo "$(GREEN)✓ Old secret backups cleaned up!$(NC)") || \
+		echo "$(YELLOW)No secrets directory found.$(NC)"
+
+secrets-info: ## Show information about current secrets
+	@echo "$(BLUE)Secrets Information:$(NC)"
+	@test -d "secrets" && \
+		(echo "  Secrets directory: exists"; \
+		echo "  Secret files:"; \
+		ls -la secrets/*.txt 2>/dev/null | awk '{print "    " $$9 " (" $$5 " bytes, " $$6 " " $$7 " " $$8 ")"}' || echo "    No secret files found"; \
+		echo "  Backup directories:"; \
+		ls -d secrets/backup-* 2>/dev/null | wc -l | awk '{print "    " $$1 " backup(s) available"}' || echo "    No backups found") || \
+		(echo "  Secrets directory: not found"; \
+		echo "  Run 'make secrets-generate' to create secrets")
+
+## Environment setup targets
+env-setup: ## Setup environment from .env.example
+	@echo "$(GREEN)Setting up environment...$(NC)"
+	@test ! -f .env && \
+		(echo "Creating .env from .env.example..."; \
+		cp .env.example .env; \
+		echo "$(GREEN)✓ .env file created!$(NC)"; \
+		echo "$(YELLOW)⚠️  Please review and customize .env before starting containers!$(NC)") || \
+		echo "$(YELLOW).env file already exists, skipping...$(NC)"
+
+env-validate: ## Validate environment configuration
+	@echo "$(GREEN)Validating environment configuration...$(NC)"
+	@test -f .env && \
+		(echo "✓ .env file exists"; \
+		grep -q "PUID=" .env && echo "✓ PUID is set" || echo "⚠️  PUID not set"; \
+		grep -q "PGID=" .env && echo "✓ PGID is set" || echo "⚠️  PGID not set"; \
+		grep -q "TZ=" .env && echo "✓ TZ is set" || echo "⚠️  TZ not set"; \
+		grep -q "UMASK=" .env && echo "✓ UMASK is set" || echo "⚠️  UMASK not set"; \
+		grep -q "LSIO_FIRST_PARTY=false" .env && echo "✓ LSIO_FIRST_PARTY correctly set" || echo "⚠️  LSIO_FIRST_PARTY should be false"; \
+		test -d secrets && echo "✓ Secrets directory exists" || echo "⚠️  Secrets directory missing - run 'make secrets-generate'"; \
+		echo "$(GREEN)Environment validation completed!$(NC)") || \
+		(echo "$(RED)✗ .env file not found!$(NC)"; \
+		echo "Run 'make env-setup' to create it."; \
+		exit 1)
+
+## Complete setup workflow
+setup: env-setup secrets-generate ## Complete initial setup
+	@echo "$(GREEN)Initial setup completed!$(NC)"
+	@echo "$(BLUE)Next steps:$(NC)"
+	@echo "  1. Review and customize .env file"
+	@echo "  2. Run 'make build' to build the Docker image"
+	@echo "  3. Run 'make dev' or 'docker-compose up -d' to start"
+
+## Windows-specific targets
+windows-setup: env-setup secrets-generate-windows ## Setup for Windows with OpenSSL
+	@echo "$(GREEN)Windows setup completed!$(NC)"
+	@echo "$(BLUE)Next steps:$(NC)"
+	@echo "  1. Review and customize .env file"
+	@echo "  2. Run 'make build' to build the Docker image"
+	@echo "  3. Run 'make start' to start the container"
+
+secrets-generate-windows: ## Generate secrets using Windows OpenSSL
+	@echo "$(GREEN)Generating secure secrets for Windows...$(NC)"
+	@mkdir -p secrets
+	@echo "Generating JWT secret..."
+	@openssl rand -base64 64 | tr -d '\n' > secrets/jwt_secret.txt
+	@echo "Generating API key..."
+	@openssl rand -hex 32 | tr -d '\n' > secrets/api_key.txt
+	@echo "Generating database password..."
+	@openssl rand -base64 32 | tr -d "=+/\n" | cut -c1-25 > secrets/db_password.txt
+	@echo -n "audiobookshelf" > secrets/db_user.txt
+	@echo "Generating backup encryption key..."
+	@openssl rand -base64 32 | tr -d '\n' > secrets/backup_key.txt
+	@echo "$(GREEN)✓ Secrets generated successfully!$(NC)"
+	@echo "$(YELLOW)⚠️  Keep these secrets secure and never commit them to version control!$(NC)"
+
+## Container management commands
+start: ## Start the audiobookshelf container
+	@echo "$(GREEN)Starting Audiobookshelf container...$(NC)"
+	@test -f .env || (echo "$(RED)✗ .env file not found! Run 'make env-setup' first$(NC)" && exit 1)
+	@test -d secrets || (echo "$(YELLOW)⚠️  Secrets not found, generating...$(NC)" && $(MAKE) secrets-generate)
+	$(COMPOSE) up -d audiobookshelf
+	@echo "$(GREEN)✓ Container started on http://localhost:$$(grep EXTERNAL_PORT .env | cut -d'=' -f2 | head -1)$(NC)"
+
+start-with-db: ## Start audiobookshelf with PostgreSQL database
+	@echo "$(GREEN)Starting Audiobookshelf with database...$(NC)"
+	@test -f .env || (echo "$(RED)✗ .env file not found! Run 'make env-setup' first$(NC)" && exit 1)
+	@test -d secrets || (echo "$(YELLOW)⚠️  Secrets not found, generating...$(NC)" && $(MAKE) secrets-generate)
+	$(COMPOSE) --profile with-db up -d
+	@echo "$(GREEN)✓ Container with database started$(NC)"
+
+stop: ## Stop the audiobookshelf container
+	@echo "$(GREEN)Stopping Audiobookshelf container...$(NC)"
+	$(COMPOSE) down
+	@echo "$(GREEN)✓ Container stopped$(NC)"
+
+restart: stop start ## Restart the audiobookshelf container
+
+status: ## Show container status and health
+	@echo "$(GREEN)Container Status:$(NC)"
+	$(COMPOSE) ps
+	@echo ""
+	@echo "$(GREEN)Health Status:$(NC)"
+	@$(DOCKER) ps --filter "name=audiobookshelf" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "No containers running"
+	@echo ""
+	@echo "$(GREEN)Recent Logs:$(NC)"
+	$(COMPOSE) logs --tail=20 audiobookshelf 2>/dev/null || echo "No logs available"
+
+## Information targets
+info: ## Show build information
+	@echo "$(BLUE)Build Information:$(NC)"
+	@echo "  Repository: $(DOCKER_REPO)"
+	@echo "  Version: $(VERSION)"
+	@echo "  Build Date: $(BUILD_DATE)"
+	@echo "  VCS Ref: $(VCS_REF)"
+	@echo "  Audiobookshelf Version: $(AUDIOBOOKSHELF_VERSION)"
+	@echo "  Platforms: $(PLATFORMS)"

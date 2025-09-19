@@ -1,0 +1,107 @@
+# Docker Compose Override Template
+# Copy this file to docker-compose.override.yml and customize as needed
+# This file allows you to override or extend the main docker-compose.yml
+# without modifying the original file
+
+# IMPORTANT: Add docker-compose.override.yml to .gitignore to keep your
+# local configurations private and separate from the repository
+
+# version: '3.8'  # Removed - version field is obsolete in modern Docker Compose
+
+services:
+  audiobookshelf:
+    # Override image tag for specific version
+    # image: mildman1848/audiobookshelf:v2.29.0
+
+    # Override container name
+    # container_name: my-audiobookshelf
+
+    # Override or add ports
+    # ports:
+    #   - "8080:80"  # Different external port
+
+    # Override or add environment variables
+    # environment:
+    #   - LOG_LEVEL=debug
+    #   - DEBUG_MODE=true
+    #   - VERBOSE_LOGGING=true
+    #   - CUSTOM_VARIABLE=value
+
+    # Override or add volumes
+    # volumes:
+    #   - /custom/path/config:/config
+    #   - /custom/path/audiobooks:/audiobooks
+    #   - /custom/path/podcasts:/podcasts
+    #   - /custom/path/metadata:/metadata
+    #   # Add custom scripts
+    #   - ./my-custom-scripts:/custom-cont-init.d:ro
+
+    # Add labels (useful for Traefik, monitoring, etc.)
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.audiobookshelf.rule=Host(`audiobooks.mydomain.com`)"
+    #   - "monitoring.enable=true"
+
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+    # Add networks
+    # networks:
+    #   - reverse-proxy
+    #   - monitoring
+
+  postgres:
+    # Resource limits for PostgreSQL
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+    # Custom PostgreSQL configuration
+    # environment:
+    #   - POSTGRES_SHARED_PRELOAD_LIBRARIES=pg_stat_statements
+    #   - POSTGRES_MAX_CONNECTIONS=100
+
+# Add additional services
+# services:
+#   nginx-proxy:
+#     image: nginx:alpine
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#     volumes:
+#       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#     depends_on:
+#       - audiobookshelf
+
+# Define additional networks
+# networks:
+#   reverse-proxy:
+#     external: true
+#   monitoring:
+#     external: true
+
+# Define additional volumes
+# volumes:
+#   custom_data:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: /custom/path
+
+# Override secrets with different files
+# secrets:
+#   audiobookshelf_jwt_secret:
+#     file: /path/to/custom/jwt_secret.txt

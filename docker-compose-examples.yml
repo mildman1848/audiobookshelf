@@ -1,0 +1,247 @@
+# Docker Compose Examples for Audiobookshelf
+# Copy sections as needed to your docker-compose.yml
+
+# ==============================================================================
+# BASIC SETUP - Minimal configuration
+# ==============================================================================
+version: '3.8'
+
+services:
+  audiobookshelf-basic:
+    image: mildman1848/audiobookshelf:latest
+    container_name: audiobookshelf-basic
+    restart: unless-stopped
+    ports:
+      - "13378:80"
+    volumes:
+      - ./config:/config
+      - ./audiobooks:/audiobooks
+      - ./podcasts:/podcasts
+      - ./metadata:/metadata
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+    profiles:
+      - basic
+
+# ==============================================================================
+# ADVANCED SETUP - Full LinuxServer.io features
+# ==============================================================================
+  audiobookshelf-advanced:
+    image: mildman1848/audiobookshelf:latest
+    container_name: audiobookshelf-advanced
+    restart: unless-stopped
+    ports:
+      - "13378:80"
+    volumes:
+      - ./config:/config
+      - ./audiobooks:/audiobooks
+      - ./podcasts:/podcasts
+      - ./metadata:/metadata
+      # LinuxServer.io custom scripts
+      - ./custom-scripts:/custom-cont-init.d:ro
+      - ./custom-services:/custom-services.d:ro
+    environment:
+      # LinuxServer.io Base Configuration
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - UMASK=022
+      - LSIO_FIRST_PARTY=false
+
+      # LinuxServer.io Docker Mods
+      - DOCKER_MODS=linuxserver/mods:universal-cron|linuxserver/mods:audiobookshelf-flac2mp3
+
+      # LinuxServer.io FILE__ Secrets
+      - FILE__JWT_SECRET=/run/secrets/audiobookshelf_jwt_secret
+      - FILE__API_KEY=/run/secrets/audiobookshelf_api_key
+
+      # Audiobookshelf Configuration
+      - LOG_LEVEL=info
+      - HOST=0.0.0.0
+      - PORT=80
+      - SOURCE=docker
+    secrets:
+      - audiobookshelf_jwt_secret
+      - audiobookshelf_api_key
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    profiles:
+      - advanced
+
+# ==============================================================================
+# WITH EXTERNAL DATABASE - PostgreSQL setup
+# ==============================================================================
+  audiobookshelf-db:
+    image: mildman1848/audiobookshelf:latest
+    container_name: audiobookshelf-db
+    restart: unless-stopped
+    ports:
+      - "13379:80"
+    volumes:
+      - ./config-db:/config
+      - ./audiobooks:/audiobooks
+      - ./podcasts:/podcasts
+      - ./metadata:/metadata
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - UMASK=022
+
+      # Database Configuration
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=audiobookshelf
+
+      # LinuxServer.io FILE__ Secrets
+      - FILE__JWT_SECRET=/run/secrets/audiobookshelf_jwt_secret
+      - FILE__DB_USER=/run/secrets/audiobookshelf_db_user
+      - FILE__DB_PASSWORD=/run/secrets/audiobookshelf_db_password
+    secrets:
+      - audiobookshelf_jwt_secret
+      - audiobookshelf_db_user
+      - audiobookshelf_db_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - with-db
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: audiobookshelf-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: audiobookshelf
+      POSTGRES_USER_FILE: /run/secrets/audiobookshelf_db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/audiobookshelf_db_password
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    secrets:
+      - audiobookshelf_db_user
+      - audiobookshelf_db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/audiobookshelf_db_user) -d audiobookshelf"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - with-db
+
+# ==============================================================================
+# REVERSE PROXY SETUP - Traefik integration
+# ==============================================================================
+  audiobookshelf-traefik:
+    image: mildman1848/audiobookshelf:latest
+    container_name: audiobookshelf-traefik
+    restart: unless-stopped
+    volumes:
+      - ./config:/config
+      - ./audiobooks:/audiobooks
+      - ./podcasts:/podcasts
+      - ./metadata:/metadata
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - TRUST_PROXY=true
+      - BEHIND_PROXY=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.audiobookshelf.rule=Host(`audiobooks.example.com`)"
+      - "traefik.http.routers.audiobookshelf.entrypoints=websecure"
+      - "traefik.http.routers.audiobookshelf.tls.certresolver=letsencrypt"
+      - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
+    networks:
+      - traefik
+    profiles:
+      - traefik
+
+# ==============================================================================
+# DEVELOPMENT SETUP - With debug logging
+# ==============================================================================
+  audiobookshelf-dev:
+    image: mildman1848/audiobookshelf:latest
+    container_name: audiobookshelf-dev
+    restart: "no"
+    ports:
+      - "13378:80"
+    volumes:
+      - ./config:/config
+      - ./audiobooks:/audiobooks
+      - ./podcasts:/podcasts
+      - ./metadata:/metadata
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - LOG_LEVEL=debug
+      - DEBUG_MODE=true
+      - VERBOSE_LOGGING=true
+      - NODE_ENV=development
+    profiles:
+      - dev
+
+# ==============================================================================
+# SECRETS AND VOLUMES
+# ==============================================================================
+secrets:
+  audiobookshelf_jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  audiobookshelf_api_key:
+    file: ./secrets/api_key.txt
+  audiobookshelf_db_user:
+    file: ./secrets/db_user.txt
+  audiobookshelf_db_password:
+    file: ./secrets/db_password.txt
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  traefik:
+    external: true
+  default:
+    name: audiobookshelf_network
+    driver: bridge
+
+# ==============================================================================
+# USAGE EXAMPLES
+# ==============================================================================
+#
+# Basic setup:
+#   docker-compose --profile basic up -d
+#
+# Advanced setup with LinuxServer.io features:
+#   docker-compose --profile advanced up -d
+#
+# With external PostgreSQL database:
+#   docker-compose --profile with-db up -d
+#
+# Behind Traefik reverse proxy:
+#   docker-compose --profile traefik up -d
+#
+# Development mode:
+#   docker-compose --profile dev up -d
+#

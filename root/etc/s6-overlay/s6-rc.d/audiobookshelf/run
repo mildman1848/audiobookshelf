@@ -1,0 +1,67 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+echo "Starting audiobookshelf service..."
+
+# Security: Load secrets safely
+if [[ -f /run/secrets/audiobookshelf_jwt_secret ]]; then
+    echo "Loading JWT secret from Docker secret..."
+    export JWT_SECRET="$(cat /run/secrets/audiobookshelf_jwt_secret)"
+fi
+
+if [[ -f /run/secrets/audiobookshelf_api_key ]]; then
+    echo "Loading API key from Docker secret..."
+    export API_KEY="$(cat /run/secrets/audiobookshelf_api_key)"
+fi
+
+if [[ -f /run/secrets/audiobookshelf_config ]]; then
+    echo "Loading configuration from Docker secret..."
+    # Security: Validate config before sourcing
+    if [[ -r /run/secrets/audiobookshelf_config ]]; then
+        source /run/secrets/audiobookshelf_config
+    fi
+fi
+
+# Set default values with proper validation
+PORT=${PORT:-80}
+CONFIG_PATH=${CONFIG_PATH:-/config}
+METADATA_PATH=${METADATA_PATH:-/metadata}
+HOST=${HOST:-0.0.0.0}
+FFMPEG_PATH=${FFMPEG_PATH:-/usr/bin/ffmpeg}
+FFPROBE_PATH=${FFPROBE_PATH:-/usr/bin/ffprobe}
+LOG_LEVEL=${LOG_LEVEL:-info}
+
+# Security: Validate paths
+if [[ ! -d "${CONFIG_PATH}" ]]; then
+    echo "Creating config directory: ${CONFIG_PATH}"
+    mkdir -p "${CONFIG_PATH}"
+fi
+
+if [[ ! -d "${METADATA_PATH}" ]]; then
+    echo "Creating metadata directory: ${METADATA_PATH}"
+    mkdir -p "${METADATA_PATH}"
+fi
+
+# Security: Ensure proper ownership with restricted permissions (safely)
+echo "Setting directory permissions..."
+chown -R abc:abc "${CONFIG_PATH}" "${METADATA_PATH}" 2>/dev/null || true
+find "${CONFIG_PATH}" "${METADATA_PATH}" -type d -exec chmod 750 {} \; 2>/dev/null || true
+find "${CONFIG_PATH}" "${METADATA_PATH}" -type f -exec chmod 640 {} \; 2>/dev/null || true
+
+# Security: Validate port range
+if ! [[ "${PORT}" =~ ^[0-9]+$ ]] || [ "${PORT}" -lt 1 ] || [ "${PORT}" -gt 65535 ]; then
+    echo "ERROR: Invalid port number: ${PORT}"
+    exit 1
+fi
+
+echo "Starting audiobookshelf on ${HOST}:${PORT}..."
+echo "Config path: ${CONFIG_PATH}"
+echo "Metadata path: ${METADATA_PATH}"
+echo "Log level: ${LOG_LEVEL}"
+
+# Security: Run as non-root user with limited capabilities
+cd /app && exec s6-setuidgid abc node index.js \
+  --host="${HOST}" \
+  --port="${PORT}" \
+  --config="${CONFIG_PATH}" \
+  --metadata="${METADATA_PATH}"

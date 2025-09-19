@@ -1,0 +1,65 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+echo "Initializing audiobookshelf configuration..."
+
+# Apply UMASK for file creation (LinuxServer.io standard)
+UMASK=${UMASK:-022}
+umask "$UMASK"
+echo "Applied UMASK: $UMASK"
+
+# Create necessary directories with proper permissions
+echo "Creating directory structure..."
+mkdir -p /config /metadata /audiobooks /podcasts
+
+# Apply LinuxServer.io standard ownership and permissions (safely)
+echo "Setting ownership and permissions..."
+# Only change ownership if we have permission, otherwise skip silently
+chown -R abc:abc /config /metadata 2>/dev/null || true
+# Only change permissions on directories we can modify
+find /config /metadata -type d -exec chmod 750 {} \; 2>/dev/null || true
+find /config /metadata -type f -exec chmod 640 {} \; 2>/dev/null || true
+
+# Create audiobooks and podcasts directories if they don't exist
+if [[ ! -d /audiobooks ]]; then
+    mkdir -p /audiobooks
+    chown abc:abc /audiobooks 2>/dev/null || true
+    chmod 755 /audiobooks 2>/dev/null || true
+fi
+
+if [[ ! -d /podcasts ]]; then
+    mkdir -p /podcasts
+    chown abc:abc /podcasts 2>/dev/null || true
+    chmod 755 /podcasts 2>/dev/null || true
+fi
+
+# Create default config if it doesn't exist
+if [[ ! -f /config/config.json ]]; then
+    echo "Creating default configuration..."
+    cat > /config/config.json << EOF
+{
+  "port": ${PORT:-80},
+  "host": "${HOST:-0.0.0.0}",
+  "ConfigPath": "/config",
+  "MetadataPath": "/metadata",
+  "ffmpegPath": "${FFMPEG_PATH:-/usr/bin/ffmpeg}",
+  "ffprobePath": "${FFPROBE_PATH:-/usr/bin/ffprobe}",
+  "logLevel": "${LOG_LEVEL:-info}",
+  "version": "${AUDIOBOOKSHELF_VERSION:-v2.29.0}"
+}
+EOF
+    chown abc:abc /config/config.json 2>/dev/null || true
+    chmod 640 /config/config.json 2>/dev/null || true
+fi
+
+# Validate configuration
+echo "Validating configuration..."
+if [[ -f /config/config.json ]]; then
+    if ! node -e "JSON.parse(require('fs').readFileSync('/config/config.json', 'utf8'))" 2>/dev/null; then
+        echo "⚠ Warning: Invalid JSON in config.json, using defaults"
+    else
+        echo "✓ Configuration validated successfully"
+    fi
+fi
+
+echo "✓ Audiobookshelf configuration initialized successfully."

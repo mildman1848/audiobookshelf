@@ -1,0 +1,124 @@
+# Git and version control
+.git
+.gitignore
+.gitattributes
+.github/
+
+# Documentation and README files
+README.md
+CHANGELOG.md
+LICENSE
+*.md
+docs/
+
+# CI/CD and workflows
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+.azure-pipelines.yml
+
+# Development and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+.Trash-*
+*.DS_Store?
+
+# Environment and configuration
+.env*
+.env.example
+
+# Temporary files and directories
+*.tmp
+*.temp
+temp/
+tmp/
+.tmp/
+
+# Test data and testing
+test-data/
+test/
+tests/
+test-volumes/
+coverage/
+test-results/
+junit.xml
+
+# Build artifacts and dependencies
+node_modules/
+dist/
+build/
+target/
+
+# Docker related files
+Dockerfile.*
+docker-compose*.yml
+.dockerignore
+docker-compose.override.yml
+
+# Data directories (runtime volumes)
+config/
+config-db/
+audiobooks/
+podcasts/
+metadata/
+postgres_data/
+
+# Security and secrets
+secrets/
+*.key
+*.pem
+*.p12
+*.crt
+*.csr
+
+# Logs and debugging
+*.log
+*.tar.gz
+docker-bench-security/
+
+# Security scan results
+*.sarif
+trivy-results.*
+dockerfile-scan.*
+security-scan-results/
+sbom*.json
+*.spdx.json
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Language specific (if added in future)
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.env/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Makefile and scripts artifacts
+*.o
+*.a

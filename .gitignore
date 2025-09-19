@@ -1,0 +1,94 @@
+# Secrets and sensitive files
+secrets/*.txt
+secrets/*.key
+secrets/*.pem
+secrets/*.p12
+secrets/backup-*/
+!secrets/.gitkeep
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Config and data directories
+config/
+config-db/
+audiobooks/
+podcasts/
+metadata/
+postgres_data/
+test-data/
+test-volumes/
+
+# Build artifacts and logs
+*.log
+*.tmp
+*.tar.gz
+docker-bench-security/
+trivy-results.*
+dockerfile-scan.*
+
+# Test files
+test-branding.sh
+
+# OS specific
+.DS_Store
+Thumbs.db
+.Trash-*
+*.DS_Store?
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Docker and container files
+.dockerignore.bak
+docker-compose.override.yml.bak
+
+# CI/CD and testing
+.github/workflows/*.bak
+coverage/
+test-results/
+junit.xml
+
+# Security scan results
+*.sarif
+security-scan-results/
+sbom*.json
+*.spdx.json
+trivy-results.*
+dockerfile-scan.*
+
+# Container runtime logs
+*.container.log
+docker-*.log
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Temporary directories
+tmp/
+temp/
+.tmp/
+
+# Node.js (if any future JS tooling is added)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if any future Python tooling is added)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.env/
