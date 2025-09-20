@@ -101,5 +101,10 @@ CLAUDE.md
 # CodeQL and additional security scanning
 security-reports/
 codeql-db/
-codeql-results.csv
+codeql-results.*
 *.codeql.sarif
+*.codeql.json
+vulnerability-scan.*
+security-scan.*
+audit-*.json
+cve-*.json

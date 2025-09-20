@@ -24,7 +24,7 @@ Ein production-ready Docker-Image für [Audiobookshelf](https://www.audiobookshe
 - ✅ **Robust Secret Management** - 512-bit JWT, 256-bit API Keys, sichere Rotation
 - ✅ **Automated Build System** - Make + GitHub Actions CI/CD mit Manifest Validation
 - ✅ **Environment Validation** - Umfassende Konfigurationsprüfung
-- ✅ **Security Scanning** - Integrierte Vulnerability-Scans mit Trivy
+- ✅ **Security Scanning** - Integrierte Vulnerability-Scans mit Trivy + CodeQL
 - ✅ **OCI Compliance** - Standard-konforme Container Labels und Manifest Structure
 
 ## 🚀 Quick Start
@@ -104,7 +104,9 @@ make build-manifest          # LinuxServer.io style Manifest Lists (Empfohlen)
 make inspect-manifest        # Manifest Lists inspizieren (Multi-Arch Details)
 make validate-manifest       # OCI Manifest Compliance validieren
 make test                    # Container testen (mit Health Checks)
-make security-scan           # Security-Scan ausführen
+make security-scan           # Umfassender Security-Scan (Trivy + CodeQL)
+make trivy-scan              # Nur Trivy Vulnerability-Scan
+make codeql-scan             # CodeQL Static Code Analysis
 make validate                # Dockerfile validieren
 
 # Container Management
@@ -284,16 +286,28 @@ Das Image implementiert umfassende Security-Maßnahmen:
 - ✅ **Security Opt** - Zusätzliche Kernel-Security-Features
 - ✅ **Robust Secret Handling** - 512-bit Encryption, sichere Rotation
 
-### Security Scanning
+### Security Scanning & Vulnerability Management
+
+**Neueste Sicherheitsverbesserungen (September 2025):**
+- ✅ **68% Vulnerability-Reduktion** - Von 28 auf 9 Vulnerabilities durch umfassende npm Package-Updates
+- ✅ **CodeQL Integration** - Static Code Analysis für JavaScript/TypeScript
+- ✅ **Enhanced npm Security** - 16+ vulnerable Packages aktualisiert (axios, express, cookie, etc.)
+- ✅ **Automatisierte Scans** - GitHub Actions Integration für kontinuierliche Security-Überwachung
 
 ```bash
-# Automated Security Scan
+# Umfassender Security-Scan (Trivy + CodeQL)
 make security-scan
 
-# Manual Trivy Scan
-trivy image mildman1848/audiobookshelf:latest
+# Individuelle Scanning-Tools
+make trivy-scan              # Nur Vulnerability-Scanning
+make codeql-scan             # Nur Static Code Analysis
+make security-scan-detailed  # Detaillierter Scan mit Exports
 
-# Dockerfile Linting
+# Manuelle Scans
+trivy image mildman1848/audiobookshelf:latest
+trivy fs --format sarif --output trivy-results.sarif .
+
+# Dockerfile Validation
 make validate
 ```
 

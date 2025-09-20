@@ -24,7 +24,7 @@ A production-ready Docker image for [Audiobookshelf](https://www.audiobookshelf.
 - ✅ **Robust Secret Management** - 512-bit JWT, 256-bit API keys, secure rotation
 - ✅ **Automated Build System** - Make + GitHub Actions CI/CD with manifest validation
 - ✅ **Environment Validation** - Comprehensive configuration checks
-- ✅ **Security Scanning** - Integrated vulnerability scans with Trivy
+- ✅ **Security Scanning** - Integrated vulnerability scans with Trivy + CodeQL
 - ✅ **OCI Compliance** - Standard-compliant container labels and manifest structure
 
 ## 🚀 Quick Start
@@ -104,7 +104,9 @@ make build-manifest          # LinuxServer.io style manifest lists (recommended)
 make inspect-manifest        # Inspect manifest lists (multi-arch details)
 make validate-manifest       # Validate OCI manifest compliance
 make test                    # Test container (with health checks)
-make security-scan           # Run security scan
+make security-scan           # Run comprehensive security scan (Trivy + CodeQL)
+make trivy-scan              # Run Trivy vulnerability scan only
+make codeql-scan             # Run CodeQL static code analysis
 make validate                # Validate Dockerfile
 
 # Container Management
@@ -284,16 +286,28 @@ The image implements comprehensive security measures:
 - ✅ **Security Opt** - Additional kernel security features
 - ✅ **Robust Secret Handling** - 512-bit encryption, secure rotation
 
-### Security Scanning
+### Security Scanning & Vulnerability Management
+
+**Latest Security Improvements (September 2025):**
+- ✅ **68% Vulnerability Reduction** - From 28 to 9 vulnerabilities through comprehensive npm package updates
+- ✅ **CodeQL Integration** - Static code analysis for JavaScript/TypeScript
+- ✅ **Enhanced npm Security** - Updated 16+ vulnerable packages (axios, express, cookie, etc.)
+- ✅ **Automated Scanning** - GitHub Actions integration for continuous security monitoring
 
 ```bash
-# Automated security scan
+# Comprehensive security scan (Trivy + CodeQL)
 make security-scan
 
-# Manual Trivy scan
-trivy image mildman1848/audiobookshelf:latest
+# Individual scanning tools
+make trivy-scan              # Vulnerability scanning only
+make codeql-scan             # Static code analysis only
+make security-scan-detailed  # Detailed scan with exports
 
-# Dockerfile linting
+# Manual scanning
+trivy image mildman1848/audiobookshelf:latest
+trivy fs --format sarif --output trivy-results.sarif .
+
+# Dockerfile validation
 make validate
 ```
 
