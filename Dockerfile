@@ -114,6 +114,16 @@ RUN \
   npm install ws@^8.18.0 --save --package-lock-only && \
   echo "**** updating brace-expansion to fix CVE-2025-5889 ****" && \
   npm install brace-expansion@^2.0.1 --save --package-lock-only && \
+  echo "**** updating semver to fix nodejs-semver ReDoS vulnerability ****" && \
+  npm install semver@^7.6.4 --save --package-lock-only && \
+  echo "**** updating cross-spawn to fix ReDoS vulnerability ****" && \
+  npm install cross-spawn@^7.0.6 --save --package-lock-only && \
+  echo "**** updating braces to fix character limit vulnerability ****" && \
+  npm install braces@^3.0.4 --save --package-lock-only && \
+  echo "**** updating serialize-javascript to fix XSS vulnerability ****" && \
+  npm install serialize-javascript@^6.0.2 --save --package-lock-only && \
+  echo "**** updating nanoid to fix non-integer values vulnerability ****" && \
+  npm install nanoid@^5.0.9 --save --package-lock-only && \
   echo "**** installing updated packages ****" && \
   npm install --production --no-optional --ignore-scripts && \
   echo "**** manually fixing critical nested dependencies ****" && \
@@ -126,6 +136,20 @@ RUN \
   cp -r node_modules/cookie node_modules/cookie-parser/node_modules/ && \
   cp -r node_modules/cookie node_modules/engine.io/node_modules/ && \
   cp -r node_modules/cookie node_modules/express-session/node_modules/ && \
+  echo "**** manually replacing vulnerable ws packages in nested locations ****" && \
+  npm install ws@8.18.0 --no-save && \
+  rm -rf node_modules/engine.io/node_modules/ws 2>/dev/null || true && \
+  mkdir -p node_modules/engine.io/node_modules && \
+  cp -r node_modules/ws node_modules/engine.io/node_modules/ && \
+  echo "**** manually replacing path-to-regexp packages ****" && \
+  npm install path-to-regexp@8.2.0 --no-save && \
+  find node_modules -name "path-to-regexp" -type d | while read dir; do \
+    if [[ "$dir" != "node_modules/path-to-regexp" ]]; then \
+      rm -rf "$dir" 2>/dev/null || true; \
+      mkdir -p "$(dirname "$dir")"; \
+      cp -r node_modules/path-to-regexp "$dir"; \
+    fi; \
+  done && \
   echo "**** updating ip to latest available version ****" && \
   npm install ip@latest --save && \
   echo "**** verifying application functionality ****" && \
