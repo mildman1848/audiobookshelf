@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔧 CI/CD Pipeline Fixes
+
+#### SBOM Generation Fix
+- **Docker Publish Workflow**: Fixed SBOM attestation error "subject-digest must be in the format sha256:<hex-digest>"
+- **Digest Extraction**: Implemented proper SHA256 digest extraction from manifest lists
+- **Subshell Issue**: Resolved GitHub Actions workflow variable propagation issue
+- **Conditional SBOM**: Added safety check to only generate SBOM when valid digest is available
+- **Reliability**: Enhanced manifest creation step with proper output handling
+
 ## [2.29.0-automation.2] - 2025-09-20
 
 ### 🔧 Version Management & Final Security

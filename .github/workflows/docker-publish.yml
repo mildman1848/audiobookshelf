@@ -268,13 +268,17 @@ jobs:
           fi
 
       - name: Create versioned manifest lists (LinuxServer.io style)
+        id: manifest_creation
         working-directory: /tmp/digests
         run: |
           # LinuxServer.io pipeline style: Create architecture-specific tags and manifest lists
           platforms=("amd64" "arm64")
 
+          # Read tags into array to avoid subshell issues
+          mapfile -t tag_array < <(echo '${{ steps.meta.outputs.tags }}' | tr ' ' '\n' | grep -v '^$')
+
           # Process all tags from metadata
-          echo '${{ steps.meta.outputs.tags }}' | while read -r tag; do
+          for tag in "${tag_array[@]}"; do
             if [[ -n "$tag" ]]; then
               echo "Creating manifest list for tag: $tag"
 
@@ -321,6 +325,14 @@ jobs:
               if [ -n "$PLATFORM_REFS" ]; then
                 echo "Creating manifest list for $tag with refs: $PLATFORM_REFS"
                 docker buildx imagetools create --tag "$tag" $PLATFORM_REFS
+
+                # Store main manifest digest for SBOM (only for latest tag)
+                if [[ "$tag" == *":latest" ]]; then
+                  echo "Getting manifest digest for SBOM..."
+                  MAIN_MANIFEST_DIGEST=$(docker buildx imagetools inspect --raw "$tag" | sha256sum | cut -d' ' -f1)
+                  echo "main_manifest_digest=sha256:${MAIN_MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
+                  echo "Main manifest digest: sha256:${MAIN_MANIFEST_DIGEST}"
+                fi
               fi
             fi
           done
@@ -344,10 +356,11 @@ jobs:
           docker manifest inspect ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:latest || true
 
       - name: Generate SBOM attestation
+        if: steps.manifest_creation.outputs.main_manifest_digest != ''
         uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ github.sha }}
+          subject-digest: ${{ steps.manifest_creation.outputs.main_manifest_digest }}
           push-to-registry: true
 
       - name: Run vulnerability scan on manifest list
