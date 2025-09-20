@@ -143,8 +143,8 @@ RUN \
   cp -r node_modules/ws node_modules/engine.io/node_modules/ && \
   echo "**** manually replacing path-to-regexp packages ****" && \
   npm install path-to-regexp@8.2.0 --no-save && \
-  find node_modules -name "path-to-regexp" -type d | while read dir; do \
-    if [[ "$dir" != "node_modules/path-to-regexp" ]]; then \
+  find node_modules -name "path-to-regexp" -type d | while read -r dir; do \
+    if [ "$dir" != "node_modules/path-to-regexp" ]; then \
       rm -rf "$dir" 2>/dev/null || true; \
       mkdir -p "$(dirname "$dir")"; \
       cp -r node_modules/path-to-regexp "$dir"; \
