@@ -57,40 +57,40 @@ jobs:
             const newVersion = '${{ steps.check-abs-release.outputs.new-version }}';
             const currentVersion = process.env.CURRENT_ABS_VERSION;
             const releaseUrl = '${{ steps.check-abs-release.outputs.release-url }}';
-            const releaseNotes = `${{ steps.check-abs-release.outputs.release-notes }}`;
+            const releaseNotes = '${{ steps.check-abs-release.outputs.release-notes }}';
 
             const issueTitle = `🔄 Upstream Update Available: Audiobookshelf ${newVersion}`;
-            const issueBody = `
-## 📦 New Audiobookshelf Release Available
-
-**Current Version:** \`${currentVersion}\`
-**Latest Version:** \`${newVersion}\`
-**Release URL:** ${releaseUrl}
-
-### 📋 Release Notes
-${releaseNotes}
-
-### 🔧 Update Checklist
-- [ ] Review release notes for breaking changes
-- [ ] Update Dockerfile AUDIOBOOKSHELF_VERSION
-- [ ] Update .env.example default version
-- [ ] Run security scans
-- [ ] Test container functionality
-- [ ] Update documentation if needed
-
-### 🤖 Automation Status
-This issue was automatically created by the upstream monitoring workflow.
-
-**Next Steps:**
-1. Review the release notes above
-2. If safe to update, create a PR with the version bump
-3. Ensure all security scans pass
-4. Test the updated container
-5. Close this issue when complete
-
----
-**Labels:** \`upstream-update\`, \`audiobookshelf\`, \`automation\`
-            `;
+            const issueBody = [
+              '## 📦 New Audiobookshelf Release Available',
+              '',
+              `**Current Version:** \`${currentVersion}\``,
+              `**Latest Version:** \`${newVersion}\``,
+              `**Release URL:** ${releaseUrl}`,
+              '',
+              '### 📋 Release Notes',
+              releaseNotes,
+              '',
+              '### 🔧 Update Checklist',
+              '- [ ] Review release notes for breaking changes',
+              '- [ ] Update Dockerfile AUDIOBOOKSHELF_VERSION',
+              '- [ ] Update .env.example default version',
+              '- [ ] Run security scans',
+              '- [ ] Test container functionality',
+              '- [ ] Update documentation if needed',
+              '',
+              '### 🤖 Automation Status',
+              'This issue was automatically created by the upstream monitoring workflow.',
+              '',
+              '**Next Steps:**',
+              '1. Review the release notes above',
+              '2. If safe to update, create a PR with the version bump',
+              '3. Ensure all security scans pass',
+              '4. Test the updated container',
+              '5. Close this issue when complete',
+              '',
+              '---',
+              '**Labels:** `upstream-update`, `audiobookshelf`, `automation`'
+            ].join('\n');
 
             // Check if issue already exists
             const { data: existingIssues } = await github.rest.issues.listForRepo({
@@ -160,41 +160,41 @@ This issue was automatically created by the upstream monitoring workflow.
             const latestBase = '${{ steps.check-base.outputs.latest-base }}';
 
             const issueTitle = `⚠️ LinuxServer.io Base Image Update Available: ${latestBase}`;
-            const issueBody = `
-## 🐧 LinuxServer.io Base Image Update Available
-
-**Current Version:** \`${currentBase}\`
-**Latest Version:** \`${latestBase}\`
-**Repository:** https://github.com/linuxserver/docker-baseimage-alpine
-
-### ⚠️ Manual Review Required
-
-LinuxServer.io base image updates require manual review due to potential breaking changes.
-
-### 🔧 Update Checklist
-- [ ] Review LinuxServer.io release notes and changelogs
-- [ ] Check for Alpine Linux security updates
-- [ ] Test S6 Overlay compatibility
-- [ ] Verify custom services still work correctly
-- [ ] Update Dockerfile FROM statement
-- [ ] Run comprehensive security scans
-- [ ] Test container functionality thoroughly
-- [ ] Update documentation if needed
-
-### 🔍 Security Considerations
-- Check if this is a security-related update
-- Verify no breaking changes in S6 Overlay
-- Test all custom init scripts
-- Validate file permissions and user setup
-
-### 🤖 Automation Status
-This issue was automatically created by the upstream monitoring workflow.
-
-**⚡ Action Required:** This update requires manual review and testing before implementation.
-
----
-**Labels:** \`upstream-update\`, \`baseimage\`, \`manual-review\`, \`security\`
-            `;
+            const issueBody = [
+              '## 🐧 LinuxServer.io Base Image Update Available',
+              '',
+              `**Current Version:** \`${currentBase}\``,
+              `**Latest Version:** \`${latestBase}\``,
+              '**Repository:** https://github.com/linuxserver/docker-baseimage-alpine',
+              '',
+              '### ⚠️ Manual Review Required',
+              '',
+              'LinuxServer.io base image updates require manual review due to potential breaking changes.',
+              '',
+              '### 🔧 Update Checklist',
+              '- [ ] Review LinuxServer.io release notes and changelogs',
+              '- [ ] Check for Alpine Linux security updates',
+              '- [ ] Test S6 Overlay compatibility',
+              '- [ ] Verify custom services still work correctly',
+              '- [ ] Update Dockerfile FROM statement',
+              '- [ ] Run comprehensive security scans',
+              '- [ ] Test container functionality thoroughly',
+              '- [ ] Update documentation if needed',
+              '',
+              '### 🔍 Security Considerations',
+              '- Check if this is a security-related update',
+              '- Verify no breaking changes in S6 Overlay',
+              '- Test all custom init scripts',
+              '- Validate file permissions and user setup',
+              '',
+              '### 🤖 Automation Status',
+              'This issue was automatically created by the upstream monitoring workflow.',
+              '',
+              '**⚡ Action Required:** This update requires manual review and testing before implementation.',
+              '',
+              '---',
+              '**Labels:** `upstream-update`, `baseimage`, `manual-review`, `security`'
+            ].join('\n');
 
             // Check if issue already exists
             const { data: existingIssues } = await github.rest.issues.listForRepo({
