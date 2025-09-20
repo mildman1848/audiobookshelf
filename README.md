@@ -579,6 +579,17 @@ The project includes automated monitoring of upstream dependencies:
 
 **Monitoring Schedule**: Monday and Thursday at 6 AM UTC
 
+See [UPSTREAM_AUTOMATION_EVALUATION.md](UPSTREAM_AUTOMATION_EVALUATION.md) for detailed implementation strategy.
+
+### 🔧 Setup Requirements
+
+**For GHCR (GitHub Container Registry) support:**
+- Create a Personal Access Token with `write:packages` and `read:packages` scopes
+- Add as repository secret: `GHCR_TOKEN`
+- Path: Repository Settings → Secrets and variables → Actions → New repository secret
+
+**All other workflows work without additional setup.**
+
 ## License
 
 This project is licensed under the GPL-3.0 License. See [LICENSE](LICENSE) for details.

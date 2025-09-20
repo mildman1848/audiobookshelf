@@ -100,6 +100,9 @@ init-branding � init-mods-package-install � init-custom-files � init-secre
 - ✅ Fixed critical GitHub Actions workflow failures (ci.yml, docker-publish.yml, security.yml)
 - ✅ Implemented upstream dependency monitoring with automated notifications
 - ✅ Removed problematic ARM/v7 platform support to fix manifest issues
+- ✅ Fixed docker-compose command not found issues in CI workflow
+- ✅ Resolved TruffleHog BASE/HEAD commit scanning issues
+- ✅ Updated GHCR authentication to use GHCR_TOKEN for proper package permissions
 
 ### Security Architecture
 
@@ -228,6 +231,12 @@ make status            # Check container health and status
 - **Base Image Monitoring:** LinuxServer.io baseimage-alpine 3.22 series tracking
 - **Security Assessment:** Prioritizes security-related updates
 - **Semi-Automated:** Creates GitHub issues for manual review and action
+
+**GHCR Setup Requirements:**
+- **Personal Access Token:** Required with `write:packages` and `read:packages` scopes
+- **Repository Secret:** Add as `GHCR_TOKEN` in repository settings
+- **Path:** Repository Settings → Secrets and variables → Actions → New repository secret
+- **Note:** Without this token, Docker Build & Publish will fail with permission_denied errors
 
 ## Common Development Patterns
 
