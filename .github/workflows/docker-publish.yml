@@ -13,15 +13,21 @@ env:
   IMAGE_NAME: mildman1848/audiobookshelf
 
 jobs:
-  build-and-push:
-    name: Build and Push Multi-Platform Images
+  # Build individual platform images and push by digest
+  build:
+    name: Build Platform Images
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       id-token: write
-      attestations: write
-
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+          - linux/arm/v7
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -64,6 +70,121 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Get Audiobookshelf version
+        id: abs_version
+        run: |
+          ABS_VERSION=$(grep "AUDIOBOOKSHELF_VERSION=" .env.example | cut -d'=' -f2 | tr -d '"' || echo "v2.29.0")
+          echo "version=${ABS_VERSION}" >> $GITHUB_OUTPUT
+          echo "Audiobookshelf version: ${ABS_VERSION}"
+
+      - name: Generate platform-specific tags
+        id: platform_tags
+        run: |
+          # Convert platform to safe tag format (linux/amd64 -> amd64)
+          PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/linux\///g' | sed 's/\//-/g')
+          echo "platform_tag=${PLATFORM_TAG}" >> $GITHUB_OUTPUT
+
+          # Create platform-specific image names
+          DOCKER_PLATFORM_IMAGE="${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${PLATFORM_TAG}-${{ github.sha }}"
+          GHCR_PLATFORM_IMAGE="${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:${PLATFORM_TAG}-${{ github.sha }}"
+
+          echo "docker_platform_image=${DOCKER_PLATFORM_IMAGE}" >> $GITHUB_OUTPUT
+          echo "ghcr_platform_image=${GHCR_PLATFORM_IMAGE}" >> $GITHUB_OUTPUT
+
+      - name: Build and push platform image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ steps.platform_tags.outputs.docker_platform_image }}
+            ${{ steps.platform_tags.outputs.ghcr_platform_image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Disable provenance to avoid manifest list issues
+          provenance: false
+          sbom: false
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+            VCS_REF=${{ github.sha }}
+            AUDIOBOOKSHELF_VERSION=${{ steps.abs_version.outputs.version }}
+
+      - name: Export digest
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ steps.platform_tags.outputs.platform_tag }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Create and push manifest lists
+  manifest:
+    name: Create Multi-Platform Manifest
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_DOCKER }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_GHCR }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}
+            ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
           labels: |
             org.opencontainers.image.title=Audiobookshelf
             org.opencontainers.image.description=Self-hosted audiobook and podcast server based on LinuxServer.io Alpine
@@ -73,38 +194,83 @@ jobs:
       - name: Get Audiobookshelf version
         id: abs_version
         run: |
-          # Extract version from .env.example or use default
           ABS_VERSION=$(grep "AUDIOBOOKSHELF_VERSION=" .env.example | cut -d'=' -f2 | tr -d '"' || echo "v2.29.0")
           echo "version=${ABS_VERSION}" >> $GITHUB_OUTPUT
           echo "Audiobookshelf version: ${ABS_VERSION}"
 
-      - name: Build and push Docker images
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
-            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
-            VCS_REF=${{ github.sha }}
-            AUDIOBOOKSHELF_VERSION=${{ steps.abs_version.outputs.version }}
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          # Create Docker Hub manifest list
+          docker buildx imagetools create --tag ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            $(printf '${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+
+          # Create GHCR manifest list
+          docker buildx imagetools create --tag ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            $(printf '${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+
+      - name: Create versioned manifest lists (LinuxServer.io style)
+        working-directory: /tmp/digests
+        run: |
+          # LinuxServer.io pipeline style: Create architecture-specific tags and manifest lists
+          platforms=("amd64" "arm64" "arm-v7")
+
+          # Process all tags from metadata
+          echo '${{ steps.meta.outputs.tags }}' | while read -r tag; do
+            if [[ -n "$tag" ]]; then
+              echo "Creating manifest list for tag: $tag"
+
+              # Create architecture-specific tags (LinuxServer.io style)
+              for platform in "${platforms[@]}"; do
+                # Tag format: repository:amd64-version, repository:arm64-version, etc.
+                arch_tag="${tag%:*}:${platform}-$(echo "$tag" | cut -d: -f2)"
+                echo "Creating arch-specific tag: $arch_tag"
+
+                # Find matching digest for this platform
+                case $platform in
+                  "amd64") platform_digest=$(ls | head -1) ;;  # First digest (amd64 builds first)
+                  "arm64") platform_digest=$(ls | sed -n '2p') ;; # Second digest
+                  "arm-v7") platform_digest=$(ls | tail -1) ;;  # Last digest
+                esac
+
+                if [[ -n "$platform_digest" ]]; then
+                  docker buildx imagetools create --tag "$arch_tag" \
+                    "${tag%:*}@sha256:${platform_digest}"
+                fi
+              done
+
+              # Create main manifest list that references all platforms
+              docker buildx imagetools create --tag "$tag" \
+                $(printf '%s@sha256:%s ' $(echo "$tag" | cut -d: -f1) *)
+            fi
+          done
+
+      - name: Inspect manifest lists (LinuxServer.io style)
+        run: |
+          echo "=== Docker Hub Main Manifest List ==="
+          docker buildx imagetools inspect ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:latest || true
+
+          echo "=== Architecture-Specific Tags (LinuxServer.io style) ==="
+          for arch in amd64 arm64 arm-v7; do
+            echo "--- ${arch} specific tag ---"
+            docker buildx imagetools inspect ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${arch}-latest || true
+          done
+
+          echo "=== GHCR Main Manifest List ==="
+          docker buildx imagetools inspect ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:latest || true
+
+          echo "=== OCI Manifest Verification ==="
+          # Verify OCI compliance and manifest structure
+          docker manifest inspect ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:latest || true
 
       - name: Generate SBOM attestation
-        if: github.event_name != 'pull_request'
         uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build.outputs.digest }}
+          subject-digest: ${{ github.sha }}
           push-to-registry: true
 
-      - name: Run vulnerability scan on built image
-        if: github.event_name != 'pull_request'
+      - name: Run vulnerability scan on manifest list
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:latest
@@ -155,7 +321,7 @@ jobs:
   update-docker-hub-description:
     name: Update Docker Hub Description
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: manifest
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
@@ -173,7 +339,7 @@ jobs:
   cleanup:
     name: Cleanup Old Images
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: manifest
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Delete old GitHub Container Registry images

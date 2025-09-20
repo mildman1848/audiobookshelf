@@ -1,61 +1,67 @@
 # Audiobookshelf Docker Image
 
+> 📖 **[Deutsche Version](README.de.md)** | 🇬🇧 **English Version**
+
 ![Build Status](https://github.com/mildman1848/audiobookshelf/workflows/CI/badge.svg)
 ![Docker Pulls](https://img.shields.io/docker/pulls/mildman1848/audiobookshelf)
 ![Docker Image Size](https://img.shields.io/docker/image-size/mildman1848/audiobookshelf/latest)
 ![License](https://img.shields.io/github/license/mildman1848/audiobookshelf)
 
-Ein production-ready Docker-Image für [Audiobookshelf](https://www.audiobookshelf.org/) basierend auf dem LinuxServer.io Alpine Baseimage mit erweiterten Security-Features, automatischer Secret-Verwaltung, vollständiger LinuxServer.io Compliance und CI/CD-Integration.
+🐳 **[Docker Hub: mildman1848/audiobookshelf](https://hub.docker.com/r/mildman1848/audiobookshelf)**
+
+A production-ready Docker image for [Audiobookshelf](https://www.audiobookshelf.org/) based on the LinuxServer.io Alpine baseimage with enhanced security features, automatic secret management, full LinuxServer.io compliance, and CI/CD integration.
 
 ## 🚀 Features
 
-- ✅ **LinuxServer.io Alpine Baseimage 3.22** - Optimiert und sicher
-- ✅ **S6 Overlay v3** - Professionelles Process Management
-- ✅ **Vollständige LinuxServer.io Compliance** - FILE__ Secrets, Docker Mods, Custom Scripts
+- ✅ **LinuxServer.io Alpine Baseimage 3.22** - Optimized and secure
+- ✅ **S6 Overlay v3** - Professional process management
+- ✅ **Full LinuxServer.io Compliance** - FILE__ secrets, Docker Mods, custom scripts
 - ✅ **Enhanced Security Hardening** - Non-root execution, capability dropping, secure permissions
-- ✅ **Multi-Architecture Support** - AMD64, ARM64, ARMv7
-- ✅ **Advanced Health Checks** - Automatische Überwachung mit Failover
-- ✅ **Robust Secret Management** - 512-bit JWT, 256-bit API Keys, sichere Rotation
-- ✅ **Automated Build System** - Make + GitHub Actions CI/CD
-- ✅ **Environment Validation** - Umfassende Konfigurationsprüfung
-- ✅ **Security Scanning** - Integrierte Vulnerability-Scans mit Trivy
-- ✅ **OCI Compliance** - Standard-konforme Container Labels
+- ✅ **OCI Manifest Lists** - True multi-architecture support following OCI standard
+- ✅ **LinuxServer.io Pipeline** - Architecture-specific tags + manifest lists
+- ✅ **Multi-Platform Support** - AMD64, ARM64, ARMv7 with native performance
+- ✅ **Advanced Health Checks** - Automatic monitoring with failover
+- ✅ **Robust Secret Management** - 512-bit JWT, 256-bit API keys, secure rotation
+- ✅ **Automated Build System** - Make + GitHub Actions CI/CD with manifest validation
+- ✅ **Environment Validation** - Comprehensive configuration checks
+- ✅ **Security Scanning** - Integrated vulnerability scans with Trivy
+- ✅ **OCI Compliance** - Standard-compliant container labels and manifest structure
 
 ## 🚀 Quick Start
 
-### Automatisiertes Setup (Empfohlen)
+### Automated Setup (Recommended)
 
 ```bash
-# Repository klonen
+# Clone repository
 git clone https://github.com/mildman1848/audiobookshelf.git
 cd audiobookshelf
 
-# Komplettes Setup (Environment + Secrets)
+# Complete setup (environment + secrets)
 make setup
 
-# Container starten
+# Start container
 docker-compose up -d
 ```
 
-### Mit Docker Compose (Manuell)
+### With Docker Compose (Manual)
 
 ```bash
-# Repository klonen
+# Clone repository
 git clone https://github.com/mildman1848/audiobookshelf.git
 cd audiobookshelf
 
-# Environment konfigurieren
+# Configure environment
 cp .env.example .env
-# .env nach Bedarf anpassen
+# Adjust .env as needed
 
-# Sichere Secrets generieren
+# Generate secure secrets
 make secrets-generate
 
-# Container starten
+# Start container
 docker-compose up -d
 ```
 
-### Mit Docker Run
+### With Docker Run
 
 ```bash
 docker run -d \
@@ -77,148 +83,151 @@ docker run -d \
 ### Makefile Targets
 
 ```bash
-# Hilfe anzeigen
+# Show help
 make help
 
-# Komplettes Setup
+# Complete setup
 make setup                   # Initial setup (env + secrets)
-make env-setup               # Environment aus .env.example erstellen
-make env-validate            # Environment validieren
+make env-setup               # Create environment from .env.example
+make env-validate            # Validate environment
 
 # Secret Management (Enhanced)
-make secrets-generate        # Sichere Secrets generieren (512-bit JWT, 256-bit API)
-make secrets-rotate          # Secrets rotieren (mit Backup)
-make secrets-clean           # Alte Secret-Backups aufräumen
-make secrets-info            # Secret-Status anzeigen
+make secrets-generate        # Generate secure secrets (512-bit JWT, 256-bit API)
+make secrets-rotate          # Rotate secrets (with backup)
+make secrets-clean           # Clean up old secret backups
+make secrets-info            # Show secret status
 
-# Build & Test (Improved)
-make build                   # Image für aktuelle Plattform bauen
-make build-multiarch         # Multi-Architecture Build
-make test                    # Container testen (mit Health Checks)
-make security-scan           # Security-Scan ausführen
-make validate                # Dockerfile validieren
+# Build & Test (Enhanced with OCI Manifest Lists)
+make build                   # Build image for current platform
+make build-multiarch         # Multi-architecture build (legacy)
+make build-manifest          # LinuxServer.io style manifest lists (recommended)
+make inspect-manifest        # Inspect manifest lists (multi-arch details)
+make validate-manifest       # Validate OCI manifest compliance
+make test                    # Test container (with health checks)
+make security-scan           # Run security scan
+make validate                # Validate Dockerfile
 
 # Container Management
-make start                   # Container starten
-make stop                    # Container stoppen
-make restart                 # Container neustarten
-make status                  # Container Status und Health anzeigen
-make logs                    # Container-Logs anzeigen
-make shell                   # Shell in Container öffnen
+make start                   # Start container
+make stop                    # Stop container
+make restart                 # Restart container
+make status                  # Show container status and health
+make logs                    # Show container logs
+make shell                   # Open shell in container
 
 # Development
-make dev                     # Development Container starten
-make start-with-db           # Mit PostgreSQL Database starten
+make dev                     # Start development container
+make start-with-db           # Start with PostgreSQL database
 
 # Release
-make release                 # Vollständiger Release-Workflow
-make push                    # Image zu Registry pushen
+make release                 # Complete release workflow
+make push                    # Push image to registry
 ```
 
-### Manuelle Build
+### Manual Build
 
 ```bash
-# Image bauen
+# Build image
 docker build -t mildman1848/audiobookshelf:latest .
 
-# Mit spezifischen Argumenten
+# With specific arguments
 docker build \
   --build-arg AUDIOBOOKSHELF_VERSION=v2.29.0 \
   --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
   -t mildman1848/audiobookshelf:latest .
 ```
 
-## ⚙️ Konfiguration
+## ⚙️ Configuration
 
-### Environment-Datei
+### Environment File
 
-Die Konfiguration erfolgt über eine `.env`-Datei, die alle Umgebungsvariablen enthält:
+Configuration is done via a `.env` file containing all environment variables:
 
 ```bash
-# Erstelle .env aus Template
+# Create .env from template
 cp .env.example .env
 
-# Passe Werte nach Bedarf an
+# Adjust values as needed
 nano .env
 ```
 
-Die `.env.example` enthält alle verfügbaren Optionen mit Dokumentation und Links zur offiziellen Audiobookshelf-Dokumentation.
+The `.env.example` contains all available options with documentation and links to the official Audiobookshelf documentation.
 
-### Wichtige Umgebungsvariablen
+### Important Environment Variables
 
-| Variable | Standard | Beschreibung |
-|----------|----------|--------------|
-| `PUID` | `1000` | User ID für Dateiberechtigungen |
-| `PGID` | `1000` | Group ID für Dateiberechtigungen |
-| `TZ` | `Europe/Berlin` | Zeitzone |
-| `PORT` | `80` | Interner Container-Port |
-| `EXTERNAL_PORT` | `13378` | Externer Host-Port |
-| `CONFIG_PATH` | `/config` | Konfigurationspfad im Container |
-| `METADATA_PATH` | `/metadata` | Metadaten-Pfad im Container |
-| `LOG_LEVEL` | `info` | Log-Level (debug, info, warn, error) |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PUID` | `1000` | User ID for file permissions |
+| `PGID` | `1000` | Group ID for file permissions |
+| `TZ` | `Europe/Berlin` | Timezone |
+| `PORT` | `80` | Internal container port |
+| `EXTERNAL_PORT` | `13378` | External host port |
+| `CONFIG_PATH` | `/config` | Configuration path in container |
+| `METADATA_PATH` | `/metadata` | Metadata path in container |
+| `LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
 
-> 📖 **Vollständige Dokumentation:** Siehe [.env.example](.env.example) für alle verfügbaren Optionen
+> 📖 **Full Documentation:** See [.env.example](.env.example) for all available options
 
 ### 🔐 Enhanced LinuxServer.io Secrets Management
 
-**FILE__ Prefix (Empfohlen):**
-Das Image unterstützt den LinuxServer.io Standard `FILE__` Prefix für sichere Secret-Verwaltung:
+**FILE__ Prefix (Recommended):**
+The image supports the LinuxServer.io standard `FILE__` prefix for secure secret management:
 
 ```bash
-# .env Datei - FILE__ Prefix Secrets
+# .env file - FILE__ prefix secrets
 FILE__JWT_SECRET=/run/secrets/jwt_secret
 FILE__API_KEY=/run/secrets/api_key
 FILE__DB_PASSWORD=/run/secrets/db_password
 
-# Docker Compose Beispiel
+# Docker Compose example
 environment:
   - FILE__JWT_SECRET=/run/secrets/jwt_secret
 ```
 
-**Enhanced Secret-Generierung:**
+**Enhanced Secret Generation:**
 
 ```bash
-# Sichere Secret-Generierung (verbesserte Algorithmen)
-make secrets-generate        # 512-bit JWT, 256-bit API Keys
+# Secure secret generation (improved algorithms)
+make secrets-generate        # 512-bit JWT, 256-bit API keys
 
-# Secret-Rotation mit Backup
+# Secret rotation with backup
 make secrets-rotate
 
-# Secret-Status prüfen
+# Check secret status
 make secrets-info
 ```
 
-**Unterstützte Secrets (Enhanced):**
+**Supported Secrets (Enhanced):**
 
-| FILE__ Variable | Beschreibung | Sicherheit | Make generiert |
-|----------------|--------------|------------|----------------|
+| FILE__ Variable | Description | Security | Make Generated |
+|----------------|-------------|----------|----------------|
 | `FILE__JWT_SECRET` | JWT Secret Key (512-bit) | ✅ High | ✅ |
 | `FILE__API_KEY` | API Key (256-bit hex) | ✅ High | ✅ |
-| `FILE__DB_USER` | Datenbank Benutzer | ✅ Standard | ✅ |
-| `FILE__DB_PASSWORD` | Datenbank Passwort (256-bit) | ✅ High | ✅ |
-| `FILE__SESSION_SECRET` | Session Secret (256-bit) | ✅ High | ✅ |
+| `FILE__DB_USER` | Database user | ✅ Standard | ✅ |
+| `FILE__DB_PASSWORD` | Database password (256-bit) | ✅ High | ✅ |
+| `FILE__SESSION_SECRET` | Session secret (256-bit) | ✅ High | ✅ |
 
-> 📖 **LinuxServer.io Dokumentation:** [FILE__ Prefix](https://docs.linuxserver.io/FAQ)
+> 📖 **LinuxServer.io Documentation:** [FILE__ Prefix](https://docs.linuxserver.io/FAQ)
 
 ### Volumes
 
-| Container Pfad | Beschreibung |
-|----------------|--------------|
-| `/config` | Konfigurationsdateien |
-| `/audiobooks` | Hörbuch-Bibliothek |
-| `/podcasts` | Podcast-Bibliothek |
-| `/metadata` | Metadaten-Cache |
+| Container Path | Description |
+|----------------|-------------|
+| `/config` | Configuration files |
+| `/audiobooks` | Audiobook library |
+| `/podcasts` | Podcast library |
+| `/metadata` | Metadata cache |
 
 ## 🔧 Enhanced LinuxServer.io S6 Overlay Services
 
-Das Image verwendet S6 Overlay v3 mit optimierten Services im LinuxServer.io Standard:
+The image uses S6 Overlay v3 with optimized services following LinuxServer.io standards:
 
-- **init-branding** - Custom Mildman1848 ASCII Art Branding
-- **init-mods-package-install** - Docker Mods Installation
-- **init-custom-files** - Custom Scripts & UMASK Setup
-- **init-secrets** - Enhanced FILE__ Prefix & Legacy Secret Processing
-- **init-audiobookshelf-config** - Audiobookshelf Konfiguration mit Validation
-- **audiobookshelf** - Hauptanwendung mit korrekter Parameter-Übergabe
+- **init-branding** - Custom Mildman1848 ASCII art branding
+- **init-mods-package-install** - Docker Mods installation
+- **init-custom-files** - Custom scripts & UMASK setup
+- **init-secrets** - Enhanced FILE__ prefix & legacy secret processing
+- **init-audiobookshelf-config** - Audiobookshelf configuration with validation
+- **audiobookshelf** - Main application with correct parameter passing
 
 ### Service Dependencies (Fixed)
 
@@ -227,99 +236,144 @@ init-branding → init-mods-package-install → init-custom-files → init-secre
 ```
 
 ### Service Improvements
-- ✅ **Sichere Permissions** - Fallback-Methoden für chmod-Probleme
-- ✅ **Enhanced Validation** - JSON-Config Validation
-- ✅ **Robust Error Handling** - Graceful Fallbacks bei Fehlern
-- ✅ **Security Hardening** - Path Validation für FILE__ Secrets
+- ✅ **Secure Permissions** - Fallback methods for chmod issues
+- ✅ **Enhanced Validation** - JSON config validation
+- ✅ **Robust Error Handling** - Graceful fallbacks on errors
+- ✅ **Security Hardening** - Path validation for FILE__ secrets
 
 ### LinuxServer.io Features
 
 **Docker Mods Support:**
 ```bash
-# Einzelne Mod
+# Single mod
 DOCKER_MODS=linuxserver/mods:universal-cron
 
-# Multiple Mods (mit | getrennt)
+# Multiple mods (separated by |)
 DOCKER_MODS=linuxserver/mods:universal-cron|linuxserver/mods:audiobookshelf-flac2mp3
 ```
 
 **Custom Scripts:**
 ```bash
-# Scripts in /custom-cont-init.d werden vor Services ausgeführt
+# Scripts in /custom-cont-init.d are executed before services
 docker run -v ./my-scripts:/custom-cont-init.d:ro mildman1848/audiobookshelf
 ```
 
 **UMASK Support:**
 ```bash
-# Standard: 022 (files: 644, directories: 755)
+# Default: 022 (files: 644, directories: 755)
 UMASK=022
 ```
 
-> 📖 **Mods verfügbar:** [mods.linuxserver.io](https://mods.linuxserver.io/)
+> 📖 **Available Mods:** [mods.linuxserver.io](https://mods.linuxserver.io/)
 
 ## 🔒 Enhanced Security
 
+> 🛡️ **Security Policy**: See our [Security Policy](SECURITY.md) for reporting vulnerabilities and security guidelines
+
 ### Advanced Security Hardening
 
-Das Image implementiert umfassende Security-Maßnahmen:
+The image implements comprehensive security measures:
 
-- ✅ **Non-root Execution** - Container läuft als User `abc` (UID 911)
-- ✅ **Capability Dropping** - ALL capabilities dropped, minimale Required hinzugefügt
-- ✅ **no-new-privileges** - Verhindert Privilege Escalation
-- ✅ **Secure File Permissions** - 750 für Directories, 640 für Files
-- ✅ **Path Validation** - FILE__ Secret Path Sanitization
-- ✅ **Enhanced Error Handling** - Sichere Fallbacks bei Permission-Problemen
-- ✅ **tmpfs Mounts** - Temporary files in Memory
-- ✅ **Security Opt** - Zusätzliche Kernel-Security-Features
-- ✅ **Robust Secret Handling** - 512-bit Encryption, sichere Rotation
+- ✅ **Non-root Execution** - Container runs as user `abc` (UID 911)
+- ✅ **Capability Dropping** - ALL capabilities dropped, minimal required added
+- ✅ **no-new-privileges** - Prevents privilege escalation
+- ✅ **Secure File Permissions** - 750 for directories, 640 for files
+- ✅ **Path Validation** - FILE__ secret path sanitization
+- ✅ **Enhanced Error Handling** - Secure fallbacks for permission issues
+- ✅ **tmpfs Mounts** - Temporary files in memory
+- ✅ **Security Opt** - Additional kernel security features
+- ✅ **Robust Secret Handling** - 512-bit encryption, secure rotation
 
 ### Security Scanning
 
 ```bash
-# Automated Security Scan
+# Automated security scan
 make security-scan
 
-# Manual Trivy Scan
+# Manual Trivy scan
 trivy image mildman1848/audiobookshelf:latest
 
-# Dockerfile Linting
+# Dockerfile linting
 make validate
 ```
 
 ### Best Practices
 
 ```bash
-# 1. LinuxServer.io FILE__ Secrets verwenden
+# 1. Use LinuxServer.io FILE__ secrets
 FILE__JWT_SECRET=/run/secrets/jwt_secret
 FILE__API_KEY=/run/secrets/api_key
 
-# 2. Host-User-IDs setzen (LinuxServer.io Standard)
+# 2. Set host user IDs (LinuxServer.io standard)
 export PUID=$(id -u)
 export PGID=$(id -g)
 
-# 3. UMASK für korrekte Dateiberechtigungen
+# 3. UMASK for correct file permissions
 export UMASK=022
 
-# 4. Sichere Secret-Generierung
+# 4. Secure secret generation
 make secrets-generate
 
-# 5. Konfiguration validieren
+# 5. Validate configuration
 make env-validate
 
-# 6. Spezifische Image-Tags verwenden
-docker run mildman1848/audiobookshelf:v2.29.0  # statt :latest
+# 6. Use specific image tags
+docker run mildman1848/audiobookshelf:v2.29.0  # instead of :latest
 
-# 7. Container Health überwachen
-make status  # Container Status und Health Checks
+# 7. Monitor container health
+make status  # Container status and health checks
 
-# 8. Enhanced Secret Management nutzen
-make secrets-generate  # 512-bit JWT, 256-bit API Keys
+# 8. Use enhanced secret management
+make secrets-generate  # 512-bit JWT, 256-bit API keys
 ```
 
-### LinuxServer.io Kompatibilität
+### OCI Manifest Lists & LinuxServer.io Pipeline
+
+**OCI-compliant Multi-Architecture Support:**
 
 ```bash
-# Vollständig kompatibel mit LinuxServer.io Standards
+# Automatic platform detection (Docker pulls the right image)
+docker pull mildman1848/audiobookshelf:latest
+
+# Platform-specific tags (LinuxServer.io style)
+docker pull mildman1848/audiobookshelf:amd64-latest    # Intel/AMD 64-bit
+docker pull mildman1848/audiobookshelf:arm64-latest    # ARM 64-bit (Apple M1, Pi 4)
+docker pull mildman1848/audiobookshelf:arm-v7-latest   # ARM 32-bit (Pi 3)
+
+# Inspect manifest lists
+make inspect-manifest
+docker manifest inspect mildman1848/audiobookshelf:latest
+```
+
+**Technical Details:**
+- ✅ **OCI Image Manifest Specification v1.1.0** compliant
+- ✅ **LinuxServer.io Pipeline Standards** - Architecture tags + manifest lists
+- ✅ **Native Performance** - No emulation, real platform builds
+- ✅ **Automatic Platform Selection** - Docker chooses optimal image
+- ✅ **Backward Compatibility** - Works with all Docker clients
+
+**Manifest Structure:**
+```json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+  "manifests": [
+    {
+      "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+      "platform": { "architecture": "amd64", "os": "linux" }
+    },
+    {
+      "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+      "platform": { "architecture": "arm64", "os": "linux" }
+    }
+  ]
+}
+```
+
+### LinuxServer.io Compatibility
+
+```bash
+# Fully compatible with LinuxServer.io standards
 # ✅ S6 Overlay v3
 # ✅ FILE__ Prefix Secrets
 # ✅ DOCKER_MODS Support
@@ -327,11 +381,12 @@ make secrets-generate  # 512-bit JWT, 256-bit API Keys
 # ✅ UMASK Support
 # ✅ PUID/PGID Management
 # ✅ Custom Branding (LinuxServer.io compliant)
+# ✅ OCI Manifest Lists (2024 Pipeline Standard)
 ```
 
 ### 🎨 Container Branding
 
-Das Container zeigt beim Start ein **custom ASCII-Art Branding** für "Mildman1848":
+The container shows a **custom ASCII-art branding** for "Mildman1848" at startup:
 
 ```
 ███╗   ███╗██╗██╗     ██████╗ ███╗   ███╗ █████╗ ███╗   ██╗ ██╗ █████╗ ██╗  ██╗ █████╗
@@ -342,97 +397,97 @@ Das Container zeigt beim Start ein **custom ASCII-Art Branding** für "Mildman18
 ╚═╝     ╚═╝╚═╝╚══════╝╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═╝ ╚════╝      ╚═╝ ╚════╝
 ```
 
-**Features des Brandings:**
-- ✅ **LinuxServer.io Compliance** - Korrekte Branding-Implementation
-- ✅ **Custom ASCII Art** - Einzigartige Mildman1848 Darstellung
-- ✅ **Version Information** - Build-Details und Audiobookshelf Version
-- ✅ **Support Links** - Klare Verweise für Hilfe und Dokumentation
-- ✅ **Feature Overview** - Übersicht der implementierten LinuxServer.io Features
+**Branding Features:**
+- ✅ **LinuxServer.io Compliance** - Correct branding implementation
+- ✅ **Custom ASCII Art** - Unique Mildman1848 representation
+- ✅ **Version Information** - Build details and Audiobookshelf version
+- ✅ **Support Links** - Clear references for help and documentation
+- ✅ **Feature Overview** - Overview of implemented LinuxServer.io features
 
-> ⚠️ **Hinweis:** Dieses Container ist **NICHT** offiziell von LinuxServer.io unterstützt
+> ⚠️ **Note:** This container is **NOT** officially supported by LinuxServer.io
 
 ## Monitoring & Health Checks
 
 ### Health Check
 
-Das Image inkludiert automatische Health Checks:
+The image includes automatic health checks:
 
 ```bash
-# Status prüfen
+# Check status
 docker inspect --format='{{.State.Health.Status}}' audiobookshelf
 
-# Logs anzeigen
+# Show logs
 docker logs audiobookshelf
 ```
 
 ### Prometheus Metrics (Optional)
 
-Audiobookshelf kann mit Prometheus überwacht werden. Siehe offizielle Dokumentation für Details.
+Audiobookshelf can be monitored with Prometheus. See official documentation for details.
 
 ## 🔧 Troubleshooting
 
-### Häufige Probleme
+### Common Issues
 
 <details>
-<summary><strong>Dateiberechtigungen</strong></summary>
+<summary><strong>File Permissions</strong></summary>
 
 ```bash
-# PUID/PGID an Host-User anpassen
+# Adjust PUID/PGID to host user
 export PUID=$(id -u)
 export PGID=$(id -g)
 docker-compose up -d
 
-# Oder in .env setzen
+# Or set in .env
 echo "PUID=$(id -u)" >> .env
 echo "PGID=$(id -g)" >> .env
 ```
 </details>
 
 <details>
-<summary><strong>Port bereits belegt</strong></summary>
+<summary><strong>Port Already in Use</strong></summary>
 
 ```bash
-# Port in .env ändern
+# Change port in .env
 echo "EXTERNAL_PORT=13379" >> .env
 
-# Oder direkt in docker-compose.yml
+# Or directly in docker-compose.yml
 ports:
   - "13379:80"
 ```
 </details>
 
 <details>
-<summary><strong>Container startet nicht</strong></summary>
+<summary><strong>Container Won't Start</strong></summary>
 
 ```bash
-# 1. Logs prüfen
+# 1. Check logs
 make logs
 
-# 2. Health Check Status
+# 2. Health check status
 docker inspect --format='{{.State.Health.Status}}' audiobookshelf
 
-# 3. Environment validieren
+# 3. Validate environment
 make env-validate
 
-# 4. Debug Shell
+# 4. Debug shell
 make shell
 ```
 </details>
 
 <details>
-<summary><strong>Secrets nicht gefunden</strong></summary>
+<summary><strong>Secrets Not Found</strong></summary>
 
 ```bash
-# LinuxServer.io FILE__ Secrets verwenden
+# Use LinuxServer.io FILE__ secrets
 echo "FILE__JWT_SECRET=/run/secrets/jwt_secret" >> .env
 
-# Legacy Secrets generieren
+# Generate legacy secrets
 make secrets-generate
 
-# Secret Status prüfen
+# Check secret status
 make secrets-info
 
-# Manual FILE__ Secret Creation
+# Manual FILE__ secret creation
 mkdir -p secrets
 openssl rand -base64 64 > secrets/jwt_secret.txt
 echo "FILE__JWT_SECRET=$(pwd)/secrets/jwt_secret.txt" >> .env
@@ -442,16 +497,16 @@ echo "FILE__JWT_SECRET=$(pwd)/secrets/jwt_secret.txt" >> .env
 ### Debug Mode
 
 ```bash
-# Development Container mit Debug-Logging
+# Development container with debug logging
 echo "LOG_LEVEL=debug" >> .env
 echo "DEBUG_MODE=true" >> .env
 echo "VERBOSE_LOGGING=true" >> .env
 make dev
 
-# Shell Access
+# Shell access
 make shell
 
-# Container Inspection
+# Container inspection
 docker exec -it audiobookshelf /bin/bash
 ```
 
@@ -480,25 +535,29 @@ docker exec -it audiobookshelf /bin/bash
    ```
 
 4. **Submit PR**
-   - Erstelle einen Feature Branch
-   - Teste alle Änderungen
-   - Erstelle einen Pull Request
+   - Create a feature branch
+   - Test all changes
+   - Create a pull request
+
+> 🛡️ **Security Issues**: Please read our [Security Policy](SECURITY.md) before reporting security vulnerabilities
 
 ### CI/CD Pipeline
 
-Das Projekt verwendet GitHub Actions für:
-- ✅ **Automated Testing** - Dockerfile, Container, Integration Tests
-- ✅ **Security Scanning** - Trivy, Hadolint, SBOM Generation
-- ✅ **Multi-Architecture Builds** - AMD64, ARM64, ARMv7
-- ✅ **Automated Releases** - Semantic Versioning, Docker Hub/GHCR
-- ✅ **Dependency Updates** - Dependabot Integration
+The project uses GitHub Actions for:
+- ✅ **Automated Testing** - Dockerfile, container, integration tests
+- ✅ **Security Scanning** - Trivy, Hadolint, SBOM generation
+- ✅ **OCI Manifest Lists** - LinuxServer.io pipeline with architecture-specific tags
+- ✅ **Multi-Architecture Builds** - AMD64, ARM64, ARMv7 with native performance
+- ✅ **Manifest Validation** - OCI compliance and platform verification
+- ✅ **Automated Releases** - Semantic versioning, Docker Hub/GHCR
+- ✅ **Dependency Updates** - Dependabot integration
 
 ## License
 
-Dieses Projekt steht unter der GPL-3.0 License. Siehe [LICENSE](LICENSE) für Details.
+This project is licensed under the GPL-3.0 License. See [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- [Audiobookshelf](https://github.com/advplyr/audiobookshelf) - Original Projekt
-- [LinuxServer.io](https://www.linuxserver.io/) - Baseimage und Best Practices
-- [S6 Overlay](https://github.com/just-containers/s6-overlay) - Process Management
+- [Audiobookshelf](https://github.com/advplyr/audiobookshelf) - Original project
+- [LinuxServer.io](https://www.linuxserver.io/) - Baseimage and best practices
+- [S6 Overlay](https://github.com/just-containers/s6-overlay) - Process management

@@ -33,7 +33,12 @@ process_file_env() {
                     echo "⚠ Warning: Could not read FILE__ path: $file_path (for $env_name)"
                 fi
             else
-                echo "⚠ Warning: FILE__ path not found or not readable: $file_path (for $env_name)"
+                # Only show warning for required secrets (JWT_SECRET, API_KEY)
+                if [[ "$env_name" == "JWT_SECRET" || "$env_name" == "API_KEY" ]]; then
+                    echo "⚠ Warning: FILE__ path not found or not readable: $file_path (for $env_name)"
+                else
+                    echo "ℹ Info: Optional FILE__ path not found: $file_path (for $env_name) - skipping"
+                fi
             fi
         fi
     done < <(env | grep '^FILE__' || true)

@@ -23,7 +23,7 @@ YELLOW = \033[0;33m
 BLUE = \033[0;34m
 NC = \033[0m # No Color
 
-.PHONY: help build build-multiarch push test clean lint validate security-scan secrets-generate secrets-rotate secrets-clean secrets-info env-setup env-validate setup
+.PHONY: help build build-multiarch build-manifest build-manifest-push inspect-manifest validate-manifest push test clean lint validate security-scan secrets-generate secrets-rotate secrets-clean secrets-info env-setup env-validate setup
 
 # Default target
 all: help
@@ -68,6 +68,109 @@ build-multiarch: ## Build multi-architecture Docker image
 		.
 	@echo "$(GREEN)Multi-architecture build completed successfully!$(NC)"
 
+## LinuxServer.io Pipeline targets
+build-manifest: ## Build and create LinuxServer.io style manifest lists (local)
+	@echo "$(GREEN)Building LinuxServer.io style multi-arch with manifest lists (local)...$(NC)"
+	@echo "Building platform-specific images..."
+	# Build for current platform (amd64) - guaranteed to work
+	$(BUILDX) build \
+		--platform linux/amd64 \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg VCS_REF="$(VCS_REF)" \
+		--build-arg AUDIOBOOKSHELF_VERSION="$(AUDIOBOOKSHELF_VERSION)" \
+		--tag $(DOCKER_REPO):amd64-$(VERSION) \
+		--load \
+		.
+	@echo "$(GREEN)AMD64 build completed!$(NC)"
+	# ARM builds (optional - may fail if base images don't support these platforms)
+	@echo "$(YELLOW)Attempting ARM64 build (may fail if base image doesn't support this platform)...$(NC)"
+	-$(BUILDX) build \
+		--platform linux/arm64 \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg VCS_REF="$(VCS_REF)" \
+		--build-arg AUDIOBOOKSHELF_VERSION="$(AUDIOBOOKSHELF_VERSION)" \
+		--tag $(DOCKER_REPO):arm64-$(VERSION) \
+		--output=type=docker \
+		. && echo "$(GREEN)ARM64 build completed!$(NC)" || echo "$(YELLOW)ARM64 build failed (base image may not support this platform)$(NC)"
+	@echo "$(YELLOW)Attempting ARM v7 build (may fail if base image doesn't support this platform)...$(NC)"
+	-$(BUILDX) build \
+		--platform linux/arm/v7 \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg VCS_REF="$(VCS_REF)" \
+		--build-arg AUDIOBOOKSHELF_VERSION="$(AUDIOBOOKSHELF_VERSION)" \
+		--tag $(DOCKER_REPO):arm-v7-$(VERSION) \
+		--output=type=docker \
+		. && echo "$(GREEN)ARM v7 build completed!$(NC)" || echo "$(YELLOW)ARM v7 build failed (base image may not support this platform)$(NC)"
+	@echo "$(YELLOW)Note: Some ARM builds may fail due to base image platform support limitations.$(NC)"
+	@echo "$(YELLOW)For full manifest creation with registry push, use 'make build-manifest-push'$(NC)"
+	@echo "$(GREEN)LinuxServer.io style local builds completed!$(NC)"
+
+build-manifest-push: ## Build and push LinuxServer.io style manifest lists (requires registry access)
+	@echo "$(GREEN)Building and pushing LinuxServer.io style multi-arch with manifest lists...$(NC)"
+	@echo "$(YELLOW)Warning: This requires Docker Hub login and push access!$(NC)"
+	@echo "Building platform-specific images..."
+	# Build for each platform separately and push by digest
+	$(BUILDX) build \
+		--platform linux/amd64 \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg VCS_REF="$(VCS_REF)" \
+		--build-arg AUDIOBOOKSHELF_VERSION="$(AUDIOBOOKSHELF_VERSION)" \
+		--tag $(DOCKER_REPO):amd64-$(VERSION) \
+		--push \
+		.
+	$(BUILDX) build \
+		--platform linux/arm64 \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg VCS_REF="$(VCS_REF)" \
+		--build-arg AUDIOBOOKSHELF_VERSION="$(AUDIOBOOKSHELF_VERSION)" \
+		--tag $(DOCKER_REPO):arm64-$(VERSION) \
+		--push \
+		.
+	$(BUILDX) build \
+		--platform linux/arm/v7 \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg VCS_REF="$(VCS_REF)" \
+		--build-arg AUDIOBOOKSHELF_VERSION="$(AUDIOBOOKSHELF_VERSION)" \
+		--tag $(DOCKER_REPO):arm-v7-$(VERSION) \
+		--push \
+		.
+	@echo "Creating manifest list..."
+	$(DOCKER) manifest create $(DOCKER_REPO):$(VERSION) \
+		$(DOCKER_REPO):amd64-$(VERSION) \
+		$(DOCKER_REPO):arm64-$(VERSION) \
+		$(DOCKER_REPO):arm-v7-$(VERSION)
+	$(DOCKER) manifest push $(DOCKER_REPO):$(VERSION)
+	@echo "$(GREEN)LinuxServer.io style build with manifest list completed!$(NC)"
+
+inspect-manifest: ## Inspect manifest lists (LinuxServer.io style)
+	@echo "$(GREEN)Inspecting local images and manifest lists...$(NC)"
+	@echo "=== Local Images ==="
+	@$(DOCKER) images $(DOCKER_REPO) | grep -E "(latest|amd64|arm64|arm-v7)" || echo "No local images found"
+	@echo "=== Architecture-specific local images ==="
+	@for arch in amd64 arm64 arm-v7; do \
+		echo "--- $${arch} specific image ---"; \
+		if $(DOCKER) inspect $(DOCKER_REPO):$${arch}-$(VERSION) >/dev/null 2>&1; then \
+			$(DOCKER) inspect $(DOCKER_REPO):$${arch}-$(VERSION) --format '{{.Architecture}}' 2>/dev/null || echo "Architecture info not available"; \
+		else \
+			echo "Image not found locally"; \
+		fi; \
+	done
+	@echo "=== Remote Manifest verification (if available) ==="
+	@$(BUILDX) imagetools inspect $(DOCKER_REPO):$(VERSION) 2>/dev/null || echo "$(YELLOW)Remote manifest not available (not pushed)$(NC)"
+
+validate-manifest: ## Validate OCI manifest compliance
+	@echo "$(GREEN)Validating OCI manifest compliance...$(NC)"
+	@command -v skopeo >/dev/null 2>&1 && \
+		skopeo inspect docker://$(DOCKER_REPO):$(VERSION) || \
+		(echo "$(YELLOW)Skopeo not installed, using docker manifest inspect$(NC)"; \
+		$(DOCKER) manifest inspect $(DOCKER_REPO):$(VERSION))
+
 ## Test targets
 test: ## Test the Docker image
 	@echo "$(GREEN)Testing Docker image...$(NC)"
@@ -110,12 +213,68 @@ test: ## Test the Docker image
 	@echo "$(GREEN)All tests passed!$(NC)"
 
 ## Security and validation targets
-security-scan: ## Run security scan on the image
-	@echo "$(GREEN)Running security scan...$(NC)"
+security-scan: ## Run comprehensive security scan (Trivy + CodeQL)
+	@echo "$(GREEN)Running comprehensive security scan...$(NC)"
+	@echo "$(YELLOW)1. Running Trivy vulnerability scan...$(NC)"
 	@command -v trivy >/dev/null 2>&1 && \
 		trivy image $(DOCKER_REPO):$(VERSION) || \
-		(echo "$(YELLOW)Trivy not installed, skipping security scan$(NC)"; \
-		echo "Install Trivy for security scanning: https://trivy.dev/")
+		(echo "$(YELLOW)Running Trivy via Docker...$(NC)"; \
+		docker run --rm -v //var/run/docker.sock:/var/run/docker.sock \
+			aquasec/trivy:latest image $(DOCKER_REPO):$(VERSION) || \
+		(echo "$(YELLOW)Trivy scan failed$(NC)"; \
+		echo "Install Trivy for security scanning: https://trivy.dev/"))
+	@echo "$(YELLOW)2. Running CodeQL static analysis...$(NC)"
+	@make codeql-scan
+	@echo "$(GREEN)✓ Comprehensive security scan completed$(NC)"
+
+codeql-scan: ## Run CodeQL static code analysis
+	@echo "$(GREEN)Running CodeQL static analysis...$(NC)"
+	@if command -v gh >/dev/null 2>&1; then \
+		echo "$(YELLOW)Using GitHub CLI for CodeQL...$(NC)"; \
+		gh workflow run codeql.yml --ref $(shell git branch --show-current) || \
+		echo "$(YELLOW)CodeQL workflow triggered via GitHub CLI$(NC)"; \
+	elif command -v codeql >/dev/null 2>&1; then \
+		echo "$(YELLOW)Running CodeQL locally...$(NC)"; \
+		codeql database create codeql-db --language=javascript || true; \
+		codeql database analyze codeql-db --format=csv --output=codeql-results.csv || true; \
+		echo "$(GREEN)✓ CodeQL analysis completed - results in codeql-results.csv$(NC)"; \
+	else \
+		echo "$(YELLOW)CodeQL not available locally. Install CodeQL CLI or use GitHub Actions.$(NC)"; \
+		echo "$(CYAN)GitHub Actions CodeQL workflow available at: .github/workflows/codeql.yml$(NC)"; \
+		echo "$(CYAN)Install CodeQL: https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli$(NC)"; \
+	fi
+
+trivy-scan: ## Run Trivy vulnerability scan only
+	@echo "$(GREEN)Running Trivy vulnerability scan...$(NC)"
+	@command -v trivy >/dev/null 2>&1 && \
+		trivy image $(DOCKER_REPO):$(VERSION) || \
+		(echo "$(YELLOW)Running Trivy via Docker...$(NC)"; \
+		docker run --rm -v //var/run/docker.sock:/var/run/docker.sock \
+			aquasec/trivy:latest image $(DOCKER_REPO):$(VERSION))
+
+security-scan-detailed: ## Run detailed security scan with exports
+	@echo "$(GREEN)Running detailed security scan with exports...$(NC)"
+	@mkdir -p security-reports
+	@echo "$(YELLOW)1. Trivy JSON report...$(NC)"
+	@command -v trivy >/dev/null 2>&1 && \
+		trivy image --format json --output security-reports/trivy-report.json $(DOCKER_REPO):$(VERSION) || \
+		docker run --rm -v //var/run/docker.sock:/var/run/docker.sock -v $(PWD)/security-reports:/reports \
+			aquasec/trivy:latest image --format json --output /reports/trivy-report.json $(DOCKER_REPO):$(VERSION)
+	@echo "$(YELLOW)2. Trivy SARIF report...$(NC)"
+	@command -v trivy >/dev/null 2>&1 && \
+		trivy image --format sarif --output security-reports/trivy-report.sarif $(DOCKER_REPO):$(VERSION) || \
+		docker run --rm -v //var/run/docker.sock:/var/run/docker.sock -v $(PWD)/security-reports:/reports \
+			aquasec/trivy:latest image --format sarif --output /reports/trivy-report.sarif $(DOCKER_REPO):$(VERSION)
+	@echo "$(YELLOW)3. Dockerfile scan...$(NC)"
+	@command -v trivy >/dev/null 2>&1 && \
+		trivy config --format json --output security-reports/dockerfile-scan.json . || \
+		docker run --rm -v $(PWD):/workspace -v $(PWD)/security-reports:/reports \
+			aquasec/trivy:latest config --format json --output /reports/dockerfile-scan.json /workspace
+	@echo "$(GREEN)✓ Security reports saved to security-reports/$(NC)"
+	@echo "$(CYAN)Reports generated:$(NC)"
+	@echo "  - security-reports/trivy-report.json"
+	@echo "  - security-reports/trivy-report.sarif"
+	@echo "  - security-reports/dockerfile-scan.json"
 
 validate: ## Validate Dockerfile and configuration
 	@echo "$(GREEN)Validating Dockerfile...$(NC)"

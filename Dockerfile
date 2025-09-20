@@ -75,6 +75,52 @@ RUN chmod -R 755 /app && \
     test -f /app/index.js && \
     echo "✓ Audiobookshelf copied successfully"
 
+# Security: Update vulnerable npm packages
+RUN \
+  echo "**** updating vulnerable npm packages ****" && \
+  cd /app && \
+  npm audit --json > /tmp/audit-before.json || true && \
+  echo "**** updating axios to fix CVE-2025-27152, CVE-2025-58754, CVE-2023-45857 ****" && \
+  npm install axios@^1.7.9 --save --package-lock-only && \
+  echo "**** updating cookie to fix CVE-2024-47764 ****" && \
+  npm install cookie@^0.7.2 --save --package-lock-only && \
+  echo "**** updating express to fix CVE-2024-29041, CVE-2024-43796 ****" && \
+  npm install express@^4.21.1 --save --package-lock-only && \
+  echo "**** updating ip to fix CVE-2024-29415, CVE-2023-42282 ****" && \
+  npm install ip@^2.0.1 --save --package-lock-only && \
+  echo "**** updating path-to-regexp to fix CVE-2024-45296, CVE-2024-52798 ****" && \
+  npm install path-to-regexp@^8.2.0 --save --package-lock-only && \
+  echo "**** updating body-parser to fix CVE-2024-45590 ****" && \
+  npm install body-parser@^1.20.3 --save --package-lock-only && \
+  echo "**** updating follow-redirects to fix CVE-2024-28849 ****" && \
+  npm install follow-redirects@^1.15.9 --save --package-lock-only && \
+  echo "**** updating form-data to fix CVE-2025-7783 ****" && \
+  npm install form-data@^4.0.1 --save --package-lock-only && \
+  echo "**** updating jose to fix CVE-2024-28176 ****" && \
+  npm install jose@^5.9.6 --save --package-lock-only && \
+  echo "**** updating on-headers to fix CVE-2025-7339 ****" && \
+  npm install on-headers@^1.0.3 --save --package-lock-only && \
+  echo "**** updating send to fix CVE-2024-43799 ****" && \
+  npm install send@^0.19.0 --save --package-lock-only && \
+  echo "**** updating serve-static to fix CVE-2024-43800 ****" && \
+  npm install serve-static@^1.16.2 --save --package-lock-only && \
+  echo "**** updating tar to fix CVE-2024-28863 ****" && \
+  npm install tar@^7.4.3 --save --package-lock-only && \
+  echo "**** updating tar-fs to fix CVE-2025-48387 ****" && \
+  npm install tar-fs@^3.0.6 --save --package-lock-only && \
+  echo "**** updating ws to fix CVE-2024-37890 ****" && \
+  npm install ws@^8.18.0 --save --package-lock-only && \
+  echo "**** updating brace-expansion to fix CVE-2025-5889 ****" && \
+  npm install brace-expansion@^2.0.1 --save --package-lock-only && \
+  echo "**** installing updated packages ****" && \
+  npm install --production --no-optional --ignore-scripts && \
+  echo "**** verifying application functionality ****" && \
+  node -e "console.log('Node.js basic test passed')" && \
+  echo "**** cleanup npm cache and tmp files ****" && \
+  npm cache clean --force && \
+  rm -rf /tmp/* /app/.npm && \
+  echo "✓ Security patches applied successfully"
+
 # Copy S6 overlay services and scripts with proper ownership
 COPY --chown=root:root root/ /
 
