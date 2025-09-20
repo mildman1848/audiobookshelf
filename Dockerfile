@@ -11,6 +11,7 @@ ARG BUILD_DATE
 ARG VERSION
 ARG VCS_REF
 ARG AUDIOBOOKSHELF_VERSION=v2.29.0
+ARG PROJECT_VERSION=2.29.0-automation.2
 
 # Security: OCI-compliant labels
 LABEL org.opencontainers.image.created="${BUILD_DATE}" \
@@ -25,6 +26,7 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.url="https://github.com/mildman1848/audiobookshelf" \
       org.opencontainers.image.documentation="https://github.com/mildman1848/audiobookshelf/blob/main/README.md" \
       io.mildman1848.audiobookshelf.version="${AUDIOBOOKSHELF_VERSION}" \
+      io.mildman1848.project.version="${PROJECT_VERSION}" \
       io.mildman1848.branding="custom" \
       io.linuxserver.baseimage="ghcr.io/linuxserver/baseimage-alpine:3.22" \
       io.linuxserver.s6-overlay="v3"

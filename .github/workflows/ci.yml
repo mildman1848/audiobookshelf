@@ -83,6 +83,7 @@ jobs:
             VERSION=test-${{ github.sha }}
             VCS_REF=${{ github.sha }}
             AUDIOBOOKSHELF_VERSION=v2.29.0
+            PROJECT_VERSION=$(cat VERSION || echo "2.29.0-automation.2")
 
   integration-test:
     name: Integration Tests
@@ -106,6 +107,7 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VERSION=test
             VCS_REF=${{ github.sha }}
+            PROJECT_VERSION=$(cat VERSION || echo "2.29.0-automation.2")
 
       - name: Create test environment
         run: |

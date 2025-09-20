@@ -1,4 +1,4 @@
-name: "Upstream Dependency Monitor"
+name: Upstream Dependency Monitor
 
 on:
   schedule:

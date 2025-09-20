@@ -6,6 +6,7 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/mildman1848/audiobookshelf)
 ![Docker Image Size](https://img.shields.io/docker/image-size/mildman1848/audiobookshelf/latest)
 ![License](https://img.shields.io/github/license/mildman1848/audiobookshelf)
+![Version](https://img.shields.io/badge/version-2.29.0--automation.2-blue)
 
 🐳 **[Docker Hub: mildman1848/audiobookshelf](https://hub.docker.com/r/mildman1848/audiobookshelf)**
 

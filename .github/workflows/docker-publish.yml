@@ -70,12 +70,26 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Get Audiobookshelf version
-        id: abs_version
+      - name: Get version information
+        id: version_info
         run: |
+          # Get Audiobookshelf version
           ABS_VERSION=$(grep "AUDIOBOOKSHELF_VERSION=" .env.example | cut -d'=' -f2 | tr -d '"' || echo "v2.29.0")
-          echo "version=${ABS_VERSION}" >> $GITHUB_OUTPUT
+          echo "audiobookshelf_version=${ABS_VERSION}" >> $GITHUB_OUTPUT
           echo "Audiobookshelf version: ${ABS_VERSION}"
+
+          # Get project version
+          if [ -f VERSION ]; then
+            PROJECT_VERSION=$(cat VERSION)
+          else
+            PROJECT_VERSION="2.29.0-automation.2"
+          fi
+          echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+          echo "Project version: ${PROJECT_VERSION}"
+
+          # Generate timestamp
+          TIMESTAMP=$(date -u +'%Y%m%d%H%M%S')
+          echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
 
       - name: Generate platform-specific tags
         id: platform_tags
@@ -110,7 +124,8 @@ jobs:
             BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
             VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
             VCS_REF=${{ github.sha }}
-            AUDIOBOOKSHELF_VERSION=${{ steps.abs_version.outputs.version }}
+            AUDIOBOOKSHELF_VERSION=${{ steps.version_info.outputs.audiobookshelf_version }}
+            PROJECT_VERSION=${{ steps.version_info.outputs.project_version }}
 
       - name: Export digest
         if: github.event_name != 'pull_request'
@@ -190,12 +205,26 @@ jobs:
             org.opencontainers.image.vendor=mildman1848
             org.opencontainers.image.licenses=GPL-3.0
 
-      - name: Get Audiobookshelf version
-        id: abs_version
+      - name: Get version information
+        id: version_info
         run: |
+          # Get Audiobookshelf version
           ABS_VERSION=$(grep "AUDIOBOOKSHELF_VERSION=" .env.example | cut -d'=' -f2 | tr -d '"' || echo "v2.29.0")
-          echo "version=${ABS_VERSION}" >> $GITHUB_OUTPUT
+          echo "audiobookshelf_version=${ABS_VERSION}" >> $GITHUB_OUTPUT
           echo "Audiobookshelf version: ${ABS_VERSION}"
+
+          # Get project version
+          if [ -f VERSION ]; then
+            PROJECT_VERSION=$(cat VERSION)
+          else
+            PROJECT_VERSION="2.29.0-automation.2"
+          fi
+          echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+          echo "Project version: ${PROJECT_VERSION}"
+
+          # Generate timestamp
+          TIMESTAMP=$(date -u +'%Y%m%d%H%M%S')
+          echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
@@ -298,9 +327,11 @@ jobs:
             ```
 
             **Based on:**
-            - Audiobookshelf ${{ steps.abs_version.outputs.version }}
+            - Audiobookshelf ${{ steps.version_info.outputs.audiobookshelf_version }}
             - LinuxServer.io Alpine Baseimage 3.22
             - S6 Overlay v3
+
+            **Project Version:** ${{ steps.version_info.outputs.project_version }}
 
             ## 🚀 Quick Start
 
