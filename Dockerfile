@@ -101,7 +101,7 @@ RUN \
   echo "**** updating jose to fix CVE-2024-28176 ****" && \
   npm install jose@^5.9.6 --save --package-lock-only && \
   echo "**** updating on-headers to fix CVE-2025-7339 ****" && \
-  npm install on-headers@^1.0.3 --save --package-lock-only && \
+  npm install on-headers@^1.1.0 --save --package-lock-only && \
   echo "**** updating send to fix CVE-2024-43799 ****" && \
   npm install send@^0.19.0 --save --package-lock-only && \
   echo "**** updating serve-static to fix CVE-2024-43800 ****" && \
@@ -116,6 +116,18 @@ RUN \
   npm install brace-expansion@^2.0.1 --save --package-lock-only && \
   echo "**** installing updated packages ****" && \
   npm install --production --no-optional --ignore-scripts && \
+  echo "**** manually fixing critical nested dependencies ****" && \
+  echo "**** replacing vulnerable cookie@0.4.x with secure cookie@0.7.2 in nested locations ****" && \
+  npm install cookie@0.7.2 --no-save && \
+  rm -rf node_modules/cookie-parser/node_modules/cookie 2>/dev/null || true && \
+  rm -rf node_modules/engine.io/node_modules/cookie 2>/dev/null || true && \
+  rm -rf node_modules/express-session/node_modules/cookie 2>/dev/null || true && \
+  mkdir -p node_modules/cookie-parser/node_modules node_modules/engine.io/node_modules node_modules/express-session/node_modules && \
+  cp -r node_modules/cookie node_modules/cookie-parser/node_modules/ && \
+  cp -r node_modules/cookie node_modules/engine.io/node_modules/ && \
+  cp -r node_modules/cookie node_modules/express-session/node_modules/ && \
+  echo "**** updating ip to latest available version ****" && \
+  npm install ip@latest --save && \
   echo "**** verifying application functionality ****" && \
   node -e "console.log('Node.js basic test passed')" && \
   echo "**** cleanup npm cache and tmp files ****" && \

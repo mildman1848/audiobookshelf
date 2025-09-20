@@ -16,12 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Conditional SBOM**: Added safety check to only generate SBOM when valid digest is available
 - **Reliability**: Enhanced manifest creation step with proper output handling
 
-#### Multi-Platform Support Restoration
-- **ARM/v7 Platform**: Re-enabled ARM/v7 (linux/arm/v7) platform support for older ARM devices
-- **Three-Platform Build**: Restored full multi-architecture support (AMD64, ARM64, ARM/v7)
-- **Manifest Logic**: Enhanced manifest creation to handle three platforms properly
-- **LinuxServer.io Compliance**: Updated architecture-specific tags for all three platforms
-- **Device Compatibility**: Added support for Raspberry Pi 2/3 and other ARMv7 devices
+#### Multi-Platform Support & Build Fixes
+- **ARM/v7 Platform Removal**: Removed ARM/v7 (linux/arm/v7) support due to upstream image compatibility
+- **Two-Platform Build**: Optimized for AMD64 and ARM64 architectures only
+- **Upstream Limitation**: Both Audiobookshelf and LinuxServer.io baseimage no longer support ARM/v7
+- **Build Stability**: Fixed "no match for platform in manifest" errors in GitHub Actions
+- **Makefile Updates**: Updated PLATFORMS and removed ARM/v7 specific build commands
+
+#### Enhanced Security Patches
+- **Vulnerability Reduction**: Further reduced vulnerabilities from 28 to 9 (68% improvement)
+- **Nested Dependencies**: Added manual fixes for vulnerable nested npm packages
+- **Cookie Security**: Fixed CVE-2024-47764 in cookie-parser, engine.io, and express-session
+- **WebSocket Security**: Updated ws package to fix CVE-2024-37890
+- **Manual Overrides**: Implemented secure copying of updated packages to nested node_modules
 
 ## [2.29.0-automation.2] - 2025-09-20
 

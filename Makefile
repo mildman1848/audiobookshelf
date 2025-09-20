@@ -9,7 +9,7 @@ VCS_REF := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 AUDIOBOOKSHELF_VERSION ?= v2.29.0
 
 # Platform support for multi-architecture builds
-PLATFORMS = linux/amd64,linux/arm64,linux/arm/v7
+PLATFORMS = linux/amd64,linux/arm64
 
 # Docker commands with error checking
 DOCKER = docker
@@ -96,7 +96,6 @@ build-manifest: ## Build and create LinuxServer.io style manifest lists (local)
 		. && echo "$(GREEN)ARM64 build completed!$(NC)" || echo "$(YELLOW)ARM64 build failed (base image may not support this platform)$(NC)"
 	@echo "$(YELLOW)Attempting ARM v7 build (may fail if base image doesn't support this platform)...$(NC)"
 	-$(BUILDX) build \
-		--platform linux/arm/v7 \
 		--build-arg BUILD_DATE="$(BUILD_DATE)" \
 		--build-arg VERSION="$(VERSION)" \
 		--build-arg VCS_REF="$(VCS_REF)" \
@@ -132,7 +131,6 @@ build-manifest-push: ## Build and push LinuxServer.io style manifest lists (requ
 		--push \
 		.
 	$(BUILDX) build \
-		--platform linux/arm/v7 \
 		--build-arg BUILD_DATE="$(BUILD_DATE)" \
 		--build-arg VERSION="$(VERSION)" \
 		--build-arg VCS_REF="$(VCS_REF)" \
