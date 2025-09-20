@@ -132,7 +132,15 @@ jobs:
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
+          echo "Raw digest: $digest"
+          # Ensure we have a proper SHA256 digest
+          if [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "$digest" > "/tmp/digests/${digest#sha256:}"
+            echo "Exported digest: ${digest#sha256:}"
+          else
+            echo "ERROR: Invalid digest format: $digest"
+            exit 1
+          fi
 
       - name: Upload digest
         if: github.event_name != 'pull_request'
@@ -229,13 +237,35 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
+          echo "=== Available digest files ==="
+          ls -la
+          echo "=== Processing digests ==="
+
+          # Build digest references for Docker Hub
+          DOCKER_DIGESTS=""
+          GHCR_DIGESTS=""
+
+          for digest_file in *; do
+            if [ -f "$digest_file" ]; then
+              digest_content=$(cat "$digest_file")
+              echo "Processing digest: $digest_content"
+              DOCKER_DIGESTS="$DOCKER_DIGESTS ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}@$digest_content"
+              GHCR_DIGESTS="$GHCR_DIGESTS ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}@$digest_content"
+            fi
+          done
+
+          echo "Docker Hub digests: $DOCKER_DIGESTS"
+          echo "GHCR digests: $GHCR_DIGESTS"
+
           # Create Docker Hub manifest list
-          docker buildx imagetools create --tag ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            $(printf '${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+          if [ -n "$DOCKER_DIGESTS" ]; then
+            docker buildx imagetools create --tag ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} $DOCKER_DIGESTS
+          fi
 
           # Create GHCR manifest list
-          docker buildx imagetools create --tag ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            $(printf '${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+          if [ -n "$GHCR_DIGESTS" ]; then
+            docker buildx imagetools create --tag ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:${{ github.sha }} $GHCR_DIGESTS
+          fi
 
       - name: Create versioned manifest lists (LinuxServer.io style)
         working-directory: /tmp/digests
@@ -255,20 +285,43 @@ jobs:
                 echo "Creating arch-specific tag: $arch_tag"
 
                 # Find matching digest for this platform
+                digest_files=(*)
                 case $platform in
-                  "amd64") platform_digest=$(ls | head -1) ;;  # First digest (amd64 builds first)
-                  "arm64") platform_digest=$(ls | tail -1) ;; # Last digest
+                  "amd64")
+                    if [ ${#digest_files[@]} -gt 0 ]; then
+                      digest_content=$(cat "${digest_files[0]}")
+                      echo "Using digest for amd64: $digest_content"
+                      docker buildx imagetools create --tag "$arch_tag" "${tag%:*}@$digest_content"
+                    fi
+                    ;;
+                  "arm64")
+                    if [ ${#digest_files[@]} -gt 1 ]; then
+                      digest_content=$(cat "${digest_files[1]}")
+                      echo "Using digest for arm64: $digest_content"
+                      docker buildx imagetools create --tag "$arch_tag" "${tag%:*}@$digest_content"
+                    elif [ ${#digest_files[@]} -eq 1 ]; then
+                      # Fallback if only one platform built
+                      digest_content=$(cat "${digest_files[0]}")
+                      echo "Using single digest for arm64: $digest_content"
+                      docker buildx imagetools create --tag "$arch_tag" "${tag%:*}@$digest_content"
+                    fi
+                    ;;
                 esac
-
-                if [[ -n "$platform_digest" ]]; then
-                  docker buildx imagetools create --tag "$arch_tag" \
-                    "${tag%:*}@sha256:${platform_digest}"
-                fi
               done
 
               # Create main manifest list that references all platforms
-              docker buildx imagetools create --tag "$tag" \
-                $(printf '%s@sha256:%s ' $(echo "$tag" | cut -d: -f1) *)
+              PLATFORM_REFS=""
+              for digest_file in *; do
+                if [ -f "$digest_file" ]; then
+                  digest_content=$(cat "$digest_file")
+                  PLATFORM_REFS="$PLATFORM_REFS ${tag%:*}@$digest_content"
+                fi
+              done
+
+              if [ -n "$PLATFORM_REFS" ]; then
+                echo "Creating manifest list for $tag with refs: $PLATFORM_REFS"
+                docker buildx imagetools create --tag "$tag" $PLATFORM_REFS
+              fi
             fi
           done
 
