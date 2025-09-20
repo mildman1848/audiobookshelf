@@ -27,6 +27,7 @@ jobs:
         platform:
           - linux/amd64
           - linux/arm64
+          - linux/arm/v7
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -272,7 +273,7 @@ jobs:
         working-directory: /tmp/digests
         run: |
           # LinuxServer.io pipeline style: Create architecture-specific tags and manifest lists
-          platforms=("amd64" "arm64")
+          platforms=("amd64" "arm64" "arm-v7")
 
           # Read tags into array to avoid subshell issues
           mapfile -t tag_array < <(echo '${{ steps.meta.outputs.tags }}' | tr ' ' '\n' | grep -v '^$')
@@ -303,10 +304,12 @@ jobs:
                       digest_content=$(cat "${digest_files[1]}")
                       echo "Using digest for arm64: $digest_content"
                       docker buildx imagetools create --tag "$arch_tag" "${tag%:*}@$digest_content"
-                    elif [ ${#digest_files[@]} -eq 1 ]; then
-                      # Fallback if only one platform built
-                      digest_content=$(cat "${digest_files[0]}")
-                      echo "Using single digest for arm64: $digest_content"
+                    fi
+                    ;;
+                  "arm-v7")
+                    if [ ${#digest_files[@]} -gt 2 ]; then
+                      digest_content=$(cat "${digest_files[2]}")
+                      echo "Using digest for arm-v7: $digest_content"
                       docker buildx imagetools create --tag "$arch_tag" "${tag%:*}@$digest_content"
                     fi
                     ;;
@@ -343,7 +346,7 @@ jobs:
           docker buildx imagetools inspect ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:latest || true
 
           echo "=== Architecture-Specific Tags (LinuxServer.io style) ==="
-          for arch in amd64 arm64; do
+          for arch in amd64 arm64 arm-v7; do
             echo "--- ${arch} specific tag ---"
             docker buildx imagetools inspect ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${arch}-latest || true
           done
@@ -381,6 +384,7 @@ jobs:
             **Multi-Platform Support:**
             - `linux/amd64`
             - `linux/arm64`
+            - `linux/arm/v7`
 
             **Docker Hub:**
             ```bash

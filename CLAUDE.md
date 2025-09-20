@@ -99,7 +99,7 @@ init-branding � init-mods-package-install � init-custom-files � init-secre
 - ✅ Created bilingual documentation (English/German) with cross-references
 - ✅ Fixed critical GitHub Actions workflow failures (ci.yml, docker-publish.yml, security.yml)
 - ✅ Implemented upstream dependency monitoring with automated notifications
-- ✅ Removed problematic ARM/v7 platform support to fix manifest issues
+- ✅ Re-enabled ARM/v7 platform support with improved manifest handling
 - ✅ Fixed docker-compose command not found issues in CI workflow
 - ✅ Resolved TruffleHog BASE/HEAD commit scanning issues
 - ✅ Updated GHCR authentication to use GHCR_TOKEN for proper package permissions

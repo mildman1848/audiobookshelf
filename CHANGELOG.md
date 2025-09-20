@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Conditional SBOM**: Added safety check to only generate SBOM when valid digest is available
 - **Reliability**: Enhanced manifest creation step with proper output handling
 
+#### Multi-Platform Support Restoration
+- **ARM/v7 Platform**: Re-enabled ARM/v7 (linux/arm/v7) platform support for older ARM devices
+- **Three-Platform Build**: Restored full multi-architecture support (AMD64, ARM64, ARM/v7)
+- **Manifest Logic**: Enhanced manifest creation to handle three platforms properly
+- **LinuxServer.io Compliance**: Updated architecture-specific tags for all three platforms
+- **Device Compatibility**: Added support for Raspberry Pi 2/3 and other ARMv7 devices
+
 ## [2.29.0-automation.2] - 2025-09-20
 
 ### 🔧 Version Management & Final Security
