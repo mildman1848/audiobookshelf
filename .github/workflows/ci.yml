@@ -222,6 +222,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Install docker-compose
+        run: |
+          # Install docker-compose
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
       - name: Create test environment
         run: |
           # Copy .env.example to .env for testing
