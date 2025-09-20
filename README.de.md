@@ -19,7 +19,7 @@ Ein production-ready Docker-Image für [Audiobookshelf](https://www.audiobookshe
 - ✅ **Enhanced Security Hardening** - Non-root execution, capability dropping, secure permissions
 - ✅ **OCI Manifest Lists** - Echte Multi-Architecture Unterstützung nach OCI Standard
 - ✅ **LinuxServer.io Pipeline** - Architecture-specific Tags + Manifest Lists
-- ✅ **Multi-Platform Support** - AMD64, ARM64, ARMv7 mit nativer Performance
+- ✅ **Multi-Platform Support** - AMD64, ARM64 mit nativer Performance
 - ✅ **Advanced Health Checks** - Automatische Überwachung mit Failover
 - ✅ **Robust Secret Management** - 512-bit JWT, 256-bit API Keys, sichere Rotation
 - ✅ **Automated Build System** - Make + GitHub Actions CI/CD mit Manifest Validation
@@ -561,10 +561,23 @@ Das Projekt verwendet GitHub Actions für:
 - ✅ **Automated Testing** - Dockerfile, Container, Integration Tests
 - ✅ **Security Scanning** - Trivy, Hadolint, SBOM Generation
 - ✅ **OCI Manifest Lists** - LinuxServer.io Pipeline mit Architecture-specific Tags
-- ✅ **Multi-Architecture Builds** - AMD64, ARM64, ARMv7 mit nativer Performance
+- ✅ **Multi-Architecture Builds** - AMD64, ARM64 mit nativer Performance
 - ✅ **Manifest Validation** - OCI Compliance und Platform Verification
 - ✅ **Automated Releases** - Semantic Versioning, Docker Hub/GHCR
 - ✅ **Dependency Updates** - Dependabot Integration
+- ✅ **Upstream Monitoring** - Automatische Abhängigkeitsverfolgung und Update-Benachrichtigungen
+
+### 🔄 Upstream Dependency Monitoring
+
+Das Projekt beinhaltet automatische Überwachung von Upstream-Abhängigkeiten:
+
+- **Audiobookshelf Application**: Überwacht [advplyr/audiobookshelf](https://github.com/advplyr/audiobookshelf) Releases
+- **LinuxServer.io Base Image**: Verfolgt [linuxserver/docker-baseimage-alpine](https://github.com/linuxserver/docker-baseimage-alpine) Updates
+- **Automatische Benachrichtigungen**: Erstellt GitHub Issues für neue Releases
+- **Security Assessment**: Priorisiert sicherheitsrelevante Updates
+- **Semi-Automatisiert**: Audiobookshelf Updates via PR, Base Image Updates erfordern manuelle Überprüfung
+
+**Überwachungszeiten**: Montag und Donnerstag um 6 Uhr UTC
 
 ## License
 

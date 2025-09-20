@@ -27,7 +27,6 @@ jobs:
         platform:
           - linux/amd64
           - linux/arm64
-          - linux/arm/v7
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -213,7 +212,7 @@ jobs:
         working-directory: /tmp/digests
         run: |
           # LinuxServer.io pipeline style: Create architecture-specific tags and manifest lists
-          platforms=("amd64" "arm64" "arm-v7")
+          platforms=("amd64" "arm64")
 
           # Process all tags from metadata
           echo '${{ steps.meta.outputs.tags }}' | while read -r tag; do
@@ -229,8 +228,7 @@ jobs:
                 # Find matching digest for this platform
                 case $platform in
                   "amd64") platform_digest=$(ls | head -1) ;;  # First digest (amd64 builds first)
-                  "arm64") platform_digest=$(ls | sed -n '2p') ;; # Second digest
-                  "arm-v7") platform_digest=$(ls | tail -1) ;;  # Last digest
+                  "arm64") platform_digest=$(ls | tail -1) ;; # Last digest
                 esac
 
                 if [[ -n "$platform_digest" ]]; then
@@ -251,7 +249,7 @@ jobs:
           docker buildx imagetools inspect ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:latest || true
 
           echo "=== Architecture-Specific Tags (LinuxServer.io style) ==="
-          for arch in amd64 arm64 arm-v7; do
+          for arch in amd64 arm64; do
             echo "--- ${arch} specific tag ---"
             docker buildx imagetools inspect ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${arch}-latest || true
           done
@@ -288,7 +286,6 @@ jobs:
             **Multi-Platform Support:**
             - `linux/amd64`
             - `linux/arm64`
-            - `linux/arm/v7`
 
             **Docker Hub:**
             ```bash

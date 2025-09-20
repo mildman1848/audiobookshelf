@@ -108,3 +108,5 @@ vulnerability-scan.*
 security-scan.*
 audit-*.json
 cve-*.json
+
+UPSTREAM_AUTOMATION_EVALUATION.md

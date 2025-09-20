@@ -1,0 +1,247 @@
+name: "Upstream Dependency Monitor"
+
+on:
+  schedule:
+    - cron: '0 6 * * 1,4'  # Monday and Thursday 6 AM UTC
+  workflow_dispatch:
+
+env:
+  CURRENT_ABS_VERSION: "v2.29.0"
+  CURRENT_BASE_VERSION: "3.22"
+
+jobs:
+  monitor-audiobookshelf:
+    name: "Monitor Audiobookshelf Releases"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check Latest Audiobookshelf Release
+        id: check-abs-release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: release } = await github.rest.repos.getLatestRelease({
+              owner: 'advplyr',
+              repo: 'audiobookshelf'
+            });
+
+            const currentVersion = process.env.CURRENT_ABS_VERSION;
+            const latestVersion = release.tag_name;
+
+            console.log(`Current version: ${currentVersion}`);
+            console.log(`Latest version: ${latestVersion}`);
+
+            const needsUpdate = latestVersion !== currentVersion;
+
+            core.setOutput('needs-update', needsUpdate);
+            core.setOutput('new-version', latestVersion);
+            core.setOutput('release-url', release.html_url);
+            core.setOutput('release-notes', release.body || 'No release notes available');
+
+            return { needsUpdate, currentVersion, latestVersion };
+
+      - name: Create Audiobookshelf Update Issue
+        if: steps.check-abs-release.outputs.needs-update == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const newVersion = '${{ steps.check-abs-release.outputs.new-version }}';
+            const currentVersion = process.env.CURRENT_ABS_VERSION;
+            const releaseUrl = '${{ steps.check-abs-release.outputs.release-url }}';
+            const releaseNotes = `${{ steps.check-abs-release.outputs.release-notes }}`;
+
+            const issueTitle = `🔄 Upstream Update Available: Audiobookshelf ${newVersion}`;
+            const issueBody = `
+## 📦 New Audiobookshelf Release Available
+
+**Current Version:** \`${currentVersion}\`
+**Latest Version:** \`${newVersion}\`
+**Release URL:** ${releaseUrl}
+
+### 📋 Release Notes
+${releaseNotes}
+
+### 🔧 Update Checklist
+- [ ] Review release notes for breaking changes
+- [ ] Update Dockerfile AUDIOBOOKSHELF_VERSION
+- [ ] Update .env.example default version
+- [ ] Run security scans
+- [ ] Test container functionality
+- [ ] Update documentation if needed
+
+### 🤖 Automation Status
+This issue was automatically created by the upstream monitoring workflow.
+
+**Next Steps:**
+1. Review the release notes above
+2. If safe to update, create a PR with the version bump
+3. Ensure all security scans pass
+4. Test the updated container
+5. Close this issue when complete
+
+---
+**Labels:** \`upstream-update\`, \`audiobookshelf\`, \`automation\`
+            `;
+
+            // Check if issue already exists
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'upstream-update,audiobookshelf'
+            });
+
+            const existingIssue = existingIssues.find(issue =>
+              issue.title.includes(newVersion)
+            );
+
+            if (existingIssue) {
+              console.log(`Issue already exists for version ${newVersion}: #${existingIssue.number}`);
+              return;
+            }
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+              labels: ['upstream-update', 'audiobookshelf', 'automation']
+            });
+
+            console.log(`Created issue #${issue.number} for Audiobookshelf ${newVersion}`);
+
+  monitor-baseimage:
+    name: "Monitor LinuxServer.io Base Image"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check LinuxServer.io Base Image Updates
+        id: check-base
+        run: |
+          # Get current base image version from Dockerfile
+          CURRENT_BASE=$(grep "FROM.*baseimage-alpine" Dockerfile | head -1 | cut -d':' -f2)
+          echo "current-base=${CURRENT_BASE}" >> $GITHUB_OUTPUT
+
+          # Check for latest 3.22 series release
+          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/linuxserver/docker-baseimage-alpine/releases" | \
+            jq -r '[.[] | select(.tag_name | startswith("3.22-")) | .tag_name][0]')
+
+          echo "latest-base=${LATEST_RELEASE}" >> $GITHUB_OUTPUT
+          echo "Current base: ${CURRENT_BASE}"
+          echo "Latest base: ${LATEST_RELEASE}"
+
+          if [ "${CURRENT_BASE}" != "${LATEST_RELEASE}" ]; then
+            echo "needs-update=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs-update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Base Image Update Issue
+        if: steps.check-base.outputs.needs-update == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const currentBase = '${{ steps.check-base.outputs.current-base }}';
+            const latestBase = '${{ steps.check-base.outputs.latest-base }}';
+
+            const issueTitle = `⚠️ LinuxServer.io Base Image Update Available: ${latestBase}`;
+            const issueBody = `
+## 🐧 LinuxServer.io Base Image Update Available
+
+**Current Version:** \`${currentBase}\`
+**Latest Version:** \`${latestBase}\`
+**Repository:** https://github.com/linuxserver/docker-baseimage-alpine
+
+### ⚠️ Manual Review Required
+
+LinuxServer.io base image updates require manual review due to potential breaking changes.
+
+### 🔧 Update Checklist
+- [ ] Review LinuxServer.io release notes and changelogs
+- [ ] Check for Alpine Linux security updates
+- [ ] Test S6 Overlay compatibility
+- [ ] Verify custom services still work correctly
+- [ ] Update Dockerfile FROM statement
+- [ ] Run comprehensive security scans
+- [ ] Test container functionality thoroughly
+- [ ] Update documentation if needed
+
+### 🔍 Security Considerations
+- Check if this is a security-related update
+- Verify no breaking changes in S6 Overlay
+- Test all custom init scripts
+- Validate file permissions and user setup
+
+### 🤖 Automation Status
+This issue was automatically created by the upstream monitoring workflow.
+
+**⚡ Action Required:** This update requires manual review and testing before implementation.
+
+---
+**Labels:** \`upstream-update\`, \`baseimage\`, \`manual-review\`, \`security\`
+            `;
+
+            // Check if issue already exists
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'upstream-update,baseimage'
+            });
+
+            const existingIssue = existingIssues.find(issue =>
+              issue.title.includes(latestBase)
+            );
+
+            if (existingIssue) {
+              console.log(`Issue already exists for base image ${latestBase}: #${existingIssue.number}`);
+              return;
+            }
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+              labels: ['upstream-update', 'baseimage', 'manual-review', 'security']
+            });
+
+            console.log(`Created issue #${issue.number} for base image ${latestBase}`);
+
+  security-check:
+    name: "Security Impact Assessment"
+    runs-on: ubuntu-latest
+    needs: [monitor-audiobookshelf, monitor-baseimage]
+    if: always()
+
+    steps:
+      - name: Security Assessment Summary
+        run: |
+          echo "## 🔐 Security Assessment Summary"
+          echo ""
+          echo "**Audiobookshelf Check:** ${{ needs.monitor-audiobookshelf.result }}"
+          echo "**Base Image Check:** ${{ needs.monitor-baseimage.result }}"
+          echo ""
+          echo "### 📋 Recommendations"
+          echo "- Monitor created issues for security-related updates"
+          echo "- Prioritize security patches and CVE fixes"
+          echo "- Run comprehensive security scans before deployment"
+          echo "- Test all functionality after updates"
+          echo ""
+          echo "### 🚨 High Priority Updates"
+          echo "Any updates labeled with 'security' should be prioritized for immediate review."

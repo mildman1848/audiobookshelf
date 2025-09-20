@@ -19,7 +19,7 @@ A production-ready Docker image for [Audiobookshelf](https://www.audiobookshelf.
 - ✅ **Enhanced Security Hardening** - Non-root execution, capability dropping, secure permissions
 - ✅ **OCI Manifest Lists** - True multi-architecture support following OCI standard
 - ✅ **LinuxServer.io Pipeline** - Architecture-specific tags + manifest lists
-- ✅ **Multi-Platform Support** - AMD64, ARM64, ARMv7 with native performance
+- ✅ **Multi-Platform Support** - AMD64, ARM64 with native performance
 - ✅ **Advanced Health Checks** - Automatic monitoring with failover
 - ✅ **Robust Secret Management** - 512-bit JWT, 256-bit API keys, secure rotation
 - ✅ **Automated Build System** - Make + GitHub Actions CI/CD with manifest validation
@@ -561,10 +561,23 @@ The project uses GitHub Actions for:
 - ✅ **Automated Testing** - Dockerfile, container, integration tests
 - ✅ **Security Scanning** - Trivy, Hadolint, SBOM generation
 - ✅ **OCI Manifest Lists** - LinuxServer.io pipeline with architecture-specific tags
-- ✅ **Multi-Architecture Builds** - AMD64, ARM64, ARMv7 with native performance
+- ✅ **Multi-Architecture Builds** - AMD64, ARM64 with native performance
 - ✅ **Manifest Validation** - OCI compliance and platform verification
 - ✅ **Automated Releases** - Semantic versioning, Docker Hub/GHCR
 - ✅ **Dependency Updates** - Dependabot integration
+- ✅ **Upstream Monitoring** - Automated dependency tracking and update notifications
+
+### 🔄 Upstream Dependency Monitoring
+
+The project includes automated monitoring of upstream dependencies:
+
+- **Audiobookshelf Application**: Monitors [advplyr/audiobookshelf](https://github.com/advplyr/audiobookshelf) releases
+- **LinuxServer.io Base Image**: Tracks [linuxserver/docker-baseimage-alpine](https://github.com/linuxserver/docker-baseimage-alpine) updates
+- **Automated Notifications**: Creates GitHub issues for new releases
+- **Security Assessment**: Prioritizes security-related updates
+- **Semi-Automated**: Audiobookshelf updates via PR, base image updates require manual review
+
+**Monitoring Schedule**: Monday and Thursday at 6 AM UTC
 
 ## License
 

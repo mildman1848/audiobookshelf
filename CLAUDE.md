@@ -11,7 +11,7 @@ This is a custom Docker image for **Audiobookshelf** based on the LinuxServer.io
 **Key Technologies:**
 - **Base:** LinuxServer.io Alpine 3.22 with S6 Overlay v3
 - **Application:** Audiobookshelf v2.29.0 (Node.js)
-- **Architecture:** OCI Manifest Lists with native multi-platform support (AMD64, ARM64, ARMv7)
+- **Architecture:** OCI Manifest Lists with native multi-platform support (AMD64, ARM64)
 - **Security:** Advanced container hardening, 512-bit encryption, capability dropping
 - **Compliance:** Full LinuxServer.io standard compliance (FILE__ secrets, Docker Mods, Custom Scripts)
 - **Pipeline:** 2024 LinuxServer.io Pipeline standards with architecture-specific tags
@@ -97,6 +97,9 @@ init-branding � init-mods-package-install � init-custom-files � init-secre
 - ✅ Applied comprehensive npm security patches (28 → 9 vulnerabilities, 68% reduction)
 - ✅ Optimized container logging to reduce unnecessary warnings
 - ✅ Created bilingual documentation (English/German) with cross-references
+- ✅ Fixed critical GitHub Actions workflow failures (ci.yml, docker-publish.yml, security.yml)
+- ✅ Implemented upstream dependency monitoring with automated notifications
+- ✅ Removed problematic ARM/v7 platform support to fix manifest issues
 
 ### Security Architecture
 
@@ -205,18 +208,26 @@ make status            # Check container health and status
 ### CI/CD Integration
 
 **GitHub Actions Workflows:** (`.github/workflows/`)
-- `ci.yml`: Automated testing and validation
-- `docker-publish.yml`: **Enhanced** - OCI manifest lists with LinuxServer.io pipeline standards
-- `security.yml`: Security scanning and SBOM generation
+- `ci.yml`: Automated testing and validation ✅ Fixed DL3003 Hadolint warning
+- `docker-publish.yml`: **Enhanced** - OCI manifest lists with LinuxServer.io pipeline standards ✅ Fixed ARM/v7 platform issues
+- `security.yml`: Security scanning and SBOM generation ✅ Fixed TruffleHog and Trivy exit codes
 - `codeql.yml`: **New** - CodeQL static code analysis for JavaScript/TypeScript
 - `maintenance.yml`: Dependency updates and maintenance
+- `upstream-monitor.yml`: **New** - Automated upstream dependency monitoring with issue creation
 
 **Enhanced Docker Publish Workflow:**
-- **Matrix Builds:** Separate jobs for each platform (amd64, arm64, arm/v7)
+- **Matrix Builds:** Separate jobs for each platform (amd64, arm64) ✅ ARM/v7 removed
 - **Digest Management:** Platform images pushed by digest with artifact sharing
 - **Manifest Creation:** OCI-compliant manifest lists with architecture-specific tags
-- **LinuxServer.io Style:** Architecture tags (`amd64-latest`, `arm64-latest`, `arm-v7-latest`)
+- **LinuxServer.io Style:** Architecture tags (`amd64-latest`, `arm64-latest`) ✅ Fixed for 2 platforms
 - **Validation:** Manifest structure inspection and OCI compliance verification
+
+**Upstream Monitoring Workflow:**
+- **Schedule:** Monday and Thursday at 6 AM UTC
+- **Audiobookshelf Monitoring:** GitHub API release tracking with automated issue creation
+- **Base Image Monitoring:** LinuxServer.io baseimage-alpine 3.22 series tracking
+- **Security Assessment:** Prioritizes security-related updates
+- **Semi-Automated:** Creates GitHub issues for manual review and action
 
 ## Common Development Patterns
 

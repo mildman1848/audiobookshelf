@@ -76,9 +76,9 @@ RUN chmod -R 755 /app && \
     echo "✓ Audiobookshelf copied successfully"
 
 # Security: Update vulnerable npm packages
+WORKDIR /app
 RUN \
   echo "**** updating vulnerable npm packages ****" && \
-  cd /app && \
   npm audit --json > /tmp/audit-before.json || true && \
   echo "**** updating axios to fix CVE-2025-27152, CVE-2025-58754, CVE-2023-45857 ****" && \
   npm install axios@^1.7.9 --save --package-lock-only && \
