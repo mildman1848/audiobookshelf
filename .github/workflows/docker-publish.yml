@@ -211,7 +211,7 @@ jobs:
             org.opencontainers.image.title=Audiobookshelf
             org.opencontainers.image.description=Self-hosted audiobook and podcast server based on LinuxServer.io Alpine
             org.opencontainers.image.vendor=mildman1848
-            org.opencontainers.image.licenses=GPL-3.0
+            org.opencontainers.image.licenses=GPL-3.0-or-later
 
       - name: Get version information
         id: version_info
