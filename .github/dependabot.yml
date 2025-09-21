@@ -9,8 +9,6 @@ updates:
       time: "06:00"
       timezone: "Europe/Berlin"
     open-pull-requests-limit: 10
-    reviewers:
-      - "mildman1848"
     assignees:
       - "mildman1848"
     commit-message:
@@ -26,8 +24,6 @@ updates:
       time: "06:00"
       timezone: "Europe/Berlin"
     open-pull-requests-limit: 5
-    reviewers:
-      - "mildman1848"
     assignees:
       - "mildman1848"
     commit-message:
