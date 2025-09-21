@@ -30,15 +30,15 @@ jobs:
         id: check_tag
         run: |
           TAG="${{ github.event.inputs.audiobookshelf_tag }}"
-          echo "Checking if tag $TAG exists in audiobookshelf/audiobookshelf repository..."
+          echo "Checking if tag $TAG exists in advplyr/audiobookshelf repository..."
 
           # Check if tag exists in the original repository
-          if curl -s -f "https://api.github.com/repos/audiobookshelf/audiobookshelf/git/refs/tags/$TAG" > /dev/null; then
-            echo "✅ Tag $TAG exists in audiobookshelf/audiobookshelf"
+          if curl -s -f "https://api.github.com/repos/advplyr/audiobookshelf/git/refs/tags/$TAG" > /dev/null; then
+            echo "✅ Tag $TAG exists in advplyr/audiobookshelf"
             echo "tag_exists=true" >> $GITHUB_OUTPUT
             echo "release_version=$TAG" >> $GITHUB_OUTPUT
           else
-            echo "❌ Tag $TAG does not exist in audiobookshelf/audiobookshelf"
+            echo "❌ Tag $TAG does not exist in advplyr/audiobookshelf"
             echo "tag_exists=false" >> $GITHUB_OUTPUT
             exit 1
           fi
