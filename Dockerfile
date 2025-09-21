@@ -114,16 +114,18 @@ RUN \
   npm install ws@^8.18.0 --save --package-lock-only && \
   echo "**** updating brace-expansion to fix CVE-2025-5889 ****" && \
   npm install brace-expansion@^2.0.1 --save --package-lock-only && \
-  echo "**** updating semver to fix nodejs-semver ReDoS vulnerability ****" && \
+  echo "**** updating semver to fix CVE-2022-25883 ****" && \
   npm install semver@^7.6.4 --save --package-lock-only && \
   echo "**** updating cross-spawn to fix ReDoS vulnerability ****" && \
   npm install cross-spawn@^7.0.6 --save --package-lock-only && \
-  echo "**** updating braces to fix character limit vulnerability ****" && \
-  npm install braces@^3.0.4 --save --package-lock-only && \
+  echo "**** updating braces to fix CVE-2024-4068 ****" && \
+  npm install braces@^3.0.3 --save --package-lock-only && \
   echo "**** updating serialize-javascript to fix XSS vulnerability ****" && \
   npm install serialize-javascript@^6.0.2 --save --package-lock-only && \
   echo "**** updating nanoid to fix non-integer values vulnerability ****" && \
   npm install nanoid@^5.0.9 --save --package-lock-only && \
+  echo "**** updating @babel/helpers to fix CVE-2025-27789 ****" && \
+  npm install @babel/helpers@^7.26.10 --save --package-lock-only && \
   echo "**** installing updated packages ****" && \
   npm install --production --no-optional --ignore-scripts && \
   echo "**** manually fixing critical nested dependencies ****" && \
@@ -152,6 +154,23 @@ RUN \
   done && \
   echo "**** updating ip to latest available version ****" && \
   npm install ip@latest --save && \
+  echo "**** final nested dependency fixes for remaining vulnerabilities ****" && \
+  npm install semver@7.6.4 ws@8.18.0 serialize-javascript@6.0.2 nanoid@5.0.9 --no-save && \
+  echo "**** cleanup vulnerable nested versions ****" && \
+  find node_modules -name "package.json" -exec grep -l '"version": "7\.0\.0"' {} \; | grep semver | head -5 | while read -r file; do \
+    dir=$(dirname "$file"); \
+    if [ "$dir" != "node_modules/semver" ]; then \
+      rm -rf "$dir" 2>/dev/null || true; \
+      mkdir -p "$dir" && cp -r node_modules/semver/* "$dir/"; \
+    fi; \
+  done 2>/dev/null || true && \
+  find node_modules -name "package.json" -exec grep -l '"version": "8\.11\.0"' {} \; | grep ws | head -5 | while read -r file; do \
+    dir=$(dirname "$file"); \
+    if [ "$dir" != "node_modules/ws" ]; then \
+      rm -rf "$dir" 2>/dev/null || true; \
+      mkdir -p "$dir" && cp -r node_modules/ws/* "$dir/"; \
+    fi; \
+  done 2>/dev/null || true && \
   echo "**** verifying application functionality ****" && \
   node -e "console.log('Node.js basic test passed')" && \
   echo "**** cleanup npm cache and tmp files ****" && \
