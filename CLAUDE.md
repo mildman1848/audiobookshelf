@@ -219,6 +219,13 @@ make codeql-scan       # CodeQL static code analysis
 make status            # Check container health and status
 ```
 
+**⚠️ CRITICAL PUSH WORKFLOW REQUIREMENTS:**
+Before pushing changes to GitHub, ALWAYS follow this sequence:
+1. **Build Image:** `make build` - Verify image builds successfully
+2. **Test Container:** `make test` - Ensure container starts without warnings/errors
+3. **Only push if:** Both build and test complete successfully with clean logs
+4. **Never push** broken or non-functional versions to repository
+
 ### CI/CD Integration
 
 **GitHub Actions Workflows:** (`.github/workflows/`)
