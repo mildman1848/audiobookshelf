@@ -167,6 +167,7 @@ make validate-manifest       # Validate OCI compliance
 1. **Build Job:** Matrix builds for each platform (amd64, arm64)
 2. **Manifest Job:** Creates OCI manifest lists from platform digests
 3. **Validation:** Verifies manifest structure and platform compliance
+4. **Cleanup Job:** ✅ Fixed - Removes old GHCR packages with proper error handling
 
 ### Configuration System
 
@@ -311,6 +312,7 @@ make logs                     # Check for errors
 - **Secret errors:** ✅ Enhanced validation, run `make secrets-generate` and check `make secrets-info`
 - **Health check failures:** ✅ Fixed container parameter passing and health endpoints
 - **chmod errors:** ✅ Resolved with graceful permission handling
+- **Docker workflow failures:** ✅ Fixed GHCR cleanup step with proper error handling and token authentication
 
 **Debug Mode:**
 ```bash
