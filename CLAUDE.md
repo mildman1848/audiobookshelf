@@ -114,11 +114,17 @@ init-branding � init-mods-package-install � init-custom-files � init-secre
 
 ### Security Architecture
 
+**⚠️ KRITISCHE Sicherheitseinstellungen (Basierend auf rclone-Projekt Erkenntnissen):**
+1. **Host Binding:** PORT auf 127.0.0.1 beschränken (`HOST_BIND=127.0.0.1`)
+2. **S6 Service Bundle:** Hauptservice MUSS in `user/contents.d/audiobookshelf` enthalten sein
+3. **Process-based Health Checks:** Verwende `ps aux | grep audiobookshelf` statt HTTP-Requests
+
 **Container Security:**
 - Non-root execution (user `abc`, UID 911)
 - Security hardening with `no-new-privileges`
 - Capability dropping (ALL dropped, minimal added)
 - Read-only where possible with tmpfs mounts
+- **Localhost-only binding:** Standard HOST_BIND=127.0.0.1 für erhöhte Sicherheit
 
 **Secret Management (Enhanced):**
 - **Preferred:** LinuxServer.io FILE__ prefix secrets with path validation

@@ -7,7 +7,7 @@ services:
     container_name: ${CONTAINER_NAME:-audiobookshelf}
     restart: unless-stopped
     ports:
-      - "${EXTERNAL_PORT:-13378}:${PORT:-80}"
+      - "${HOST_BIND:-127.0.0.1}:${EXTERNAL_PORT:-13378}:${PORT:-80}"
     volumes:
       - ${HOST_CONFIG_PATH:-./config}:/config
       - ${HOST_AUDIOBOOKS_PATH:-./audiobooks}:/audiobooks
@@ -39,6 +39,7 @@ services:
       # Audiobookshelf Core Configuration
       - HOST=${HOST:-0.0.0.0}
       - PORT=${PORT:-80}
+      - HOST_BIND=${HOST_BIND:-127.0.0.1}
       - CONFIG_PATH=${CONFIG_PATH:-/config}
       - METADATA_PATH=${METADATA_PATH:-/metadata}
       - BACKUP_PATH=${BACKUP_PATH:-/config/backups}
@@ -75,7 +76,7 @@ services:
       - audiobookshelf_jwt_secret
       - audiobookshelf_api_key
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-80}/ping", "||", "curl", "-f", "http://localhost:${PORT:-80}/"]
+      test: ["CMD", "sh", "-c", "ps aux | grep -v grep | grep audiobookshelf || exit 1"]
       interval: ${HEALTH_CHECK_INTERVAL:-30s}
       timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
       retries: ${HEALTH_CHECK_RETRIES:-3}
