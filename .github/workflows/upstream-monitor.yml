@@ -26,7 +26,7 @@ jobs:
 
       - name: Check Latest Audiobookshelf Release
         id: check-abs-release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { data: release } = await github.rest.repos.getLatestRelease({
@@ -51,7 +51,7 @@ jobs:
 
       - name: Create Audiobookshelf Update Issue
         if: steps.check-abs-release.outputs.needs-update == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const newVersion = '${{ steps.check-abs-release.outputs.new-version }}';
@@ -153,7 +153,7 @@ jobs:
 
       - name: Create Base Image Update Issue
         if: steps.check-base.outputs.needs-update == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const currentBase = '${{ steps.check-base.outputs.current-base }}';
