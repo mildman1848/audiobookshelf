@@ -268,6 +268,34 @@ Before pushing changes to GitHub, ALWAYS follow this sequence:
 - **Container Labels:** Docker images tagged with both Audiobookshelf and project versions
 - **Documentation Sync:** README badges and documentation automatically reflect current version
 
+## Production Deployment
+
+**docker-compose.production.yml** provides maximum security configuration:
+
+```bash
+# Production deployment (RECOMMENDED)
+docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
+
+# Production security features:
+# - Localhost-only binding (127.0.0.1:13378)
+# - Enhanced security (AppArmor, no-new-privileges)
+# - Resource limits (2.0 CPU, 1GB RAM, 200 PIDs)
+# - Read-only audiobooks volume
+# - Structured logging with rotation (50MB, 5 files)
+# - Process-based health checks (15s interval)
+# - Restrictive UMASK (027)
+# - tmpfs mounts with security flags
+
+# Stop production deployment
+docker-compose -f docker-compose.yml -f docker-compose.production.yml down
+```
+
+**Key Production Differences:**
+- **Security:** Maximum hardening with localhost-only binding
+- **Performance:** Resource limits prevent system overload
+- **Reliability:** More frequent health checks and structured logging
+- **Data Protection:** Read-only volumes where possible
+
 ## Common Development Patterns
 
 ### Adding New Environment Variables
