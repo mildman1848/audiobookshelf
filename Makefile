@@ -7,6 +7,7 @@ VERSION ?= latest
 BUILD_DATE := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VCS_REF := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 AUDIOBOOKSHELF_VERSION ?= v2.29.0
+UPSTREAM_REPO = advplyr/audiobookshelf
 
 # Platform support for multi-architecture builds
 PLATFORMS = linux/amd64,linux/arm64
@@ -41,8 +42,25 @@ help: ## Show this help message
 	@echo "  $(YELLOW)AUDIOBOOKSHELF_VERSION$(NC) Audiobookshelf version (default: $(AUDIOBOOKSHELF_VERSION))"
 	@echo "  $(YELLOW)PLATFORMS$(NC)             Target platforms (default: $(PLATFORMS))"
 
+## Version Management
+version-check: ## Check if current version is up to date with upstream
+	@echo "$(BLUE)Checking upstream version...$(NC)"
+	@LATEST=$$(curl -s https://api.github.com/repos/$(UPSTREAM_REPO)/releases/latest | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"//;s/"//' 2>/dev/null || echo "unknown"); \
+	if [ "$$LATEST" = "unknown" ]; then \
+		echo "$(YELLOW)⚠️  Unable to fetch latest version from GitHub API$(NC)"; \
+		echo "$(YELLOW)Current version: $(AUDIOBOOKSHELF_VERSION)$(NC)"; \
+		echo "$(YELLOW)Please check https://github.com/$(UPSTREAM_REPO)/releases manually$(NC)"; \
+	elif [ "$$LATEST" != "$(AUDIOBOOKSHELF_VERSION)" ]; then \
+		echo "$(RED)⚠️  OUTDATED: Using $(AUDIOBOOKSHELF_VERSION), latest is $$LATEST$(NC)"; \
+		echo "$(YELLOW)Consider updating AUDIOBOOKSHELF_VERSION in Makefile and Dockerfile$(NC)"; \
+		echo "$(YELLOW)Update command: sed -i 's/$(AUDIOBOOKSHELF_VERSION)/'$$LATEST'/g' Makefile Dockerfile$(NC)"; \
+		echo "$(BLUE)Release info: https://github.com/$(UPSTREAM_REPO)/releases/tag/$$LATEST$(NC)"; \
+	else \
+		echo "$(GREEN)✅ Using latest version: $(AUDIOBOOKSHELF_VERSION)$(NC)"; \
+	fi
+
 ## Build targets
-build: ## Build Docker image for current platform
+build: version-check ## Build Docker image for current platform (with version check)
 	@echo "$(GREEN)Building Docker image...$(NC)"
 	$(DOCKER) build \
 		--build-arg BUILD_DATE="$(BUILD_DATE)" \
