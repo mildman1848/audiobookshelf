@@ -66,6 +66,12 @@ docker-compose.override.yml
 
 # Data directories (runtime volumes)
 config/
+data/
+logs/
+security/
+security-reports/
+
+# Legacy directories (moved to data/)
 config-db/
 audiobooks/
 podcasts/
@@ -124,5 +130,6 @@ venv/
 *.a
 
 # Claude Code configuration
+# Note: CLAUDE.md excluded from Docker build
 CLAUDE.md
 .claude/

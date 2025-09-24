@@ -16,9 +16,13 @@
 
   Based on LinuxServer.io Alpine + S6 Overlay v3
   Licensed under GPL-3.0
+
+  Original Project: https://github.com/advplyr/audiobookshelf
+  Original License: GPL-3.0
+  Original Docs: https://www.audiobookshelf.org/docs
 ══════════════════════════════════════════════════════════════════════════════════════════
 
-To support LSIO projects visit:
-https://www.linuxserver.io/donate/
+To support the original Audiobookshelf project:
+https://www.audiobookshelf.org/support
 
 ══════════════════════════════════════════════════════════════════════════════════════════

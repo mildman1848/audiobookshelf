@@ -4,6 +4,11 @@
 
 services:
   audiobookshelf:
+    # Production-grade security (extends base security_opt)
+    security_opt:
+      - apparmor=docker-default
+      - seccomp=./security/seccomp-profile.json
+
     # Localhost-only binding for maximum security
     ports:
       - "127.0.0.1:${EXTERNAL_PORT:-13378}:${PORT:-80}"
@@ -22,9 +27,9 @@ services:
     # Audiobookshelf-specific volume configurations for production
     volumes:
       - ${HOST_CONFIG_PATH:-./config}:/config:rw,Z           # Config needs to be writable
-      - ${HOST_AUDIOBOOKS_PATH:-./audiobooks}:/audiobooks:ro,Z # Read-only audiobooks
-      - ${HOST_PODCASTS_PATH:-./podcasts}:/podcasts:rw,Z     # Podcasts may need write access
-      - ${HOST_METADATA_PATH:-./metadata}:/metadata:rw,Z     # Metadata needs write access
+      - ${HOST_AUDIOBOOKS_PATH:-./data/audiobooks}:/audiobooks:ro,Z # Read-only audiobooks
+      - ${HOST_PODCASTS_PATH:-./data/podcasts}:/podcasts:rw,Z     # Podcasts may need write access
+      - ${HOST_METADATA_PATH:-./data/metadata}:/metadata:rw,Z     # Metadata needs write access
 
     # Production logging with structured format
     logging:

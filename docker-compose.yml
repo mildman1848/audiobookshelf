@@ -10,9 +10,9 @@ services:
       - "${HOST_BIND:-127.0.0.1}:${EXTERNAL_PORT:-13378}:${PORT:-80}"
     volumes:
       - ${HOST_CONFIG_PATH:-./config}:/config
-      - ${HOST_AUDIOBOOKS_PATH:-./audiobooks}:/audiobooks
-      - ${HOST_PODCASTS_PATH:-./podcasts}:/podcasts
-      - ${HOST_METADATA_PATH:-./metadata}:/metadata
+      - ${HOST_AUDIOBOOKS_PATH:-./data/audiobooks}:/audiobooks
+      - ${HOST_PODCASTS_PATH:-./data/podcasts}:/podcasts
+      - ${HOST_METADATA_PATH:-./data/metadata}:/metadata
 
       # LinuxServer.io Custom Scripts Support (optional)
       # - ${HOST_CUSTOM_SCRIPTS:-./custom-scripts}:/custom-cont-init.d:ro
@@ -103,9 +103,9 @@ services:
       - "${EXTERNAL_PORT_DB:-13379}:${PORT:-80}"
     volumes:
       - ${HOST_CONFIG_PATH_DB:-./config-db}:/config
-      - ${HOST_AUDIOBOOKS_PATH:-./audiobooks}:/audiobooks
-      - ${HOST_PODCASTS_PATH:-./podcasts}:/podcasts
-      - ${HOST_METADATA_PATH:-./metadata}:/metadata
+      - ${HOST_AUDIOBOOKS_PATH:-./data/audiobooks}:/audiobooks
+      - ${HOST_PODCASTS_PATH:-./data/podcasts}:/podcasts
+      - ${HOST_METADATA_PATH:-./data/metadata}:/metadata
     environment:
       # User/Group Configuration
       - PUID=${PUID:-1000}

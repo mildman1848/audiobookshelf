@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 📝 File Management Standardization (2025-09-23)
+
+#### .gitignore and .dockerignore Updates
+- **Standardized Exclusions**: Updated .gitignore and .dockerignore to follow workspace-wide patterns
+- **Directory Structure**: Added standardized config/, data/, logs/, security/, security-reports/ exclusions
+- **CLAUDE.md Policy**: Kept CLAUDE.md in repository for documentation (commented in ignore files)
+- **Legacy Directory Comments**: Added migration tracking comments for moved directories
+- **Security Patterns**: Enhanced security-related file exclusions across all ignore files
+- **Runtime Volume Optimization**: Optimized Docker build context by excluding runtime volumes
+
+### 🏗️ Project Structure Standardization (2025-09-23)
+
+#### Major Directory Structure Overhaul
+- **Data Consolidation**: Moved `audiobooks/`, `metadata/`, and `podcasts/` to standardized `data/` directory structure
+- **Volume Path Updates**: Updated all docker-compose files to reflect new `data/audiobooks`, `data/metadata`, and `data/podcasts` paths
+- **Documentation Organization**: Created `docs/` directory and moved LinuxServer documentation files
+- **File Cleanup**: Removed obsolete `UPSTREAM_AUTOMATION_EVALUATION.md` and `docker-compose-examples.yml` files
+
+#### Security Enhancements
+- **Standardized Security Directory**: Created `security/` directory with seccomp-profile.json
+- **Enhanced Production Security**: Added comprehensive security options to docker-compose.production.yml
+- **Production Security Options**: Added no-new-privileges, AppArmor, and seccomp configuration
+- **Localhost-only Binding**: Enforced 127.0.0.1 binding for production deployments
+
+#### Configuration Updates
+- **Volume Mount Standardization**: Updated all volume paths in docker-compose.yml and docker-compose.production.yml
+- **Environment Variables**: Updated .env.example with new standardized data paths
+- **Template Compliance**: All configuration files now match workspace template standards
+- **Cross-Project Consistency**: Ensured identical patterns across all workspace projects
+
+#### Documentation Structure
+- **docs/ Directory**: New standardized location for project documentation
+- **LinuxServer Documentation**: Moved LINUXSERVER.md and LINUXSERVER.de.md to docs/ directory
+- **Clean Root Directory**: Minimized files in project root for better organization
+
+## [2.29.0-automation.3] - 2025-09-22
+
 ### 📋 License Compliance
 - **License Verification**: Completed comprehensive license audit across all project files
 - **GPL-3.0 Confirmation**: Verified all license references correctly specify GNU General Public License v3.0

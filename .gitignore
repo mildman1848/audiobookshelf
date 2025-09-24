@@ -11,12 +11,18 @@ secrets/backup-*/
 .env.local
 .env.production
 
-# Config and data directories
+# Config and data directories (runtime volumes)
 config/
+data/
+logs/
+security/
+security-reports/
+
+# Legacy directories (moved to data/)
+# audiobooks/ -> data/audiobooks/
+# podcasts/ -> data/podcasts/
+# metadata/ -> data/metadata/
 config-db/
-audiobooks/
-podcasts/
-metadata/
 postgres_data/
 test-data/
 test-volumes/
@@ -94,7 +100,7 @@ venv/
 .env/
 
 # Claude Code configuration
-CLAUDE.md
+# Note: CLAUDE.md is kept in repo for documentation
 .claude/
 .claude/settings.local.json
 
