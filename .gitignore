@@ -16,6 +16,7 @@ config/
 data/
 logs/
 security/
+!security/seccomp-profile.json
 security-reports/
 
 # Legacy directories (moved to data/)

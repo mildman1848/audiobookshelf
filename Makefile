@@ -15,7 +15,7 @@ PLATFORMS = linux/amd64,linux/arm64
 # Docker commands with error checking
 DOCKER = docker
 BUILDX = docker buildx
-COMPOSE = docker-compose
+COMPOSE = docker compose
 
 # Colors for output
 RED = \033[0;31m
@@ -393,16 +393,11 @@ secrets-generate: ## Generate secure secrets for audiobookshelf
 	@echo "$(GREEN)Generating secure secrets...$(NC)"
 	@mkdir -p secrets
 	@echo "Generating JWT secret (512 bits)..."
-	@openssl rand -base64 64 | tr -d '\n' > secrets/jwt_secret.txt
-	@echo "Generating API key (256 bits hex)..."
-	@openssl rand -hex 32 | tr -d '\n' > secrets/api_key.txt
+	@openssl rand -base64 64 | tr -d '\n' > secrets/audiobookshelf_jwt_secret.txt
+	@echo "Generating database user..."
+	@echo -n "audiobookshelf" > secrets/audiobookshelf_db_user.txt
 	@echo "Generating database password (strong 32 chars)..."
-	@openssl rand -base64 32 | tr -d "=+/\n" | head -c 32 > secrets/db_password.txt
-	@echo -n "audiobookshelf" > secrets/db_user.txt
-	@echo "Generating backup encryption key..."
-	@openssl rand -base64 32 | tr -d '\n' > secrets/backup_key.txt
-	@echo "Generating session secret..."
-	@openssl rand -base64 32 | tr -d '\n' > secrets/session_secret.txt
+	@openssl rand -base64 32 | tr -d "=+/\n" | head -c 32 > secrets/audiobookshelf_db_password.txt
 	@chmod 600 secrets/*.txt
 	@chown $(shell id -u):$(shell id -g) secrets/*.txt 2>/dev/null || true
 	@echo "$(GREEN)✓ Secrets generated successfully!$(NC)"
@@ -502,12 +497,14 @@ start: ## Start the audiobookshelf container
 	$(COMPOSE) up -d audiobookshelf
 	@echo "$(GREEN)✓ Container started on http://localhost:$$(grep EXTERNAL_PORT .env | cut -d'=' -f2 | head -1)$(NC)"
 
-start-with-db: ## Start audiobookshelf with PostgreSQL database
-	@echo "$(GREEN)Starting Audiobookshelf with database...$(NC)"
+start-with-db: ## Start audiobookshelf with PostgreSQL database (using override file)
+	@echo "$(GREEN)Starting Audiobookshelf with PostgreSQL database...$(NC)"
 	@test -f .env || (echo "$(RED)✗ .env file not found! Run 'make env-setup' first$(NC)" && exit 1)
 	@test -d secrets || (echo "$(YELLOW)⚠️  Secrets not found, generating...$(NC)" && $(MAKE) secrets-generate)
-	$(COMPOSE) --profile with-db up -d
-	@echo "$(GREEN)✓ Container with database started$(NC)"
+	@test -f docker-compose.override.yml || (echo "$(RED)✗ docker-compose.override.yml not found! PostgreSQL support requires override file$(NC)" && exit 1)
+	$(COMPOSE) up -d
+	@echo "$(GREEN)✓ Container with PostgreSQL database started$(NC)"
+	@echo "$(BLUE)Note: PostgreSQL service will be automatically included via override file$(NC)"
 
 stop: ## Stop the audiobookshelf container
 	@echo "$(GREEN)Stopping Audiobookshelf container...$(NC)"

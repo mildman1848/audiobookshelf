@@ -1,399 +1,264 @@
-name: Create Release
+name: Release
 
 on:
   workflow_dispatch:
     inputs:
-      audiobookshelf_tag:
-        description: 'Audiobookshelf tag to release (e.g., v2.29.0)'
+      version:
+        description: 'Release version (e.g., 1.0.0)'
         required: true
         type: string
-      release_notes:
-        description: 'Additional release notes (optional)'
+      prerelease:
+        description: 'Is this a pre-release?'
         required: false
-        type: string
-        default: ''
+        default: false
+        type: boolean
+      draft:
+        description: 'Create as draft release?'
+        required: false
+        default: false
+        type: boolean
 
 env:
-  REGISTRY_DOCKER: docker.io
-  REGISTRY_GHCR: ghcr.io
-  IMAGE_NAME: mildman1848/audiobookshelf
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
-  validate-tag:
-    name: Validate Audiobookshelf Tag
+  validate:
+    name: Validate Release
     runs-on: ubuntu-latest
     outputs:
-      tag_exists: ${{ steps.check_tag.outputs.tag_exists }}
-      release_version: ${{ steps.check_tag.outputs.release_version }}
-    steps:
-      - name: Check if Audiobookshelf tag exists
-        id: check_tag
-        run: |
-          TAG="${{ github.event.inputs.audiobookshelf_tag }}"
-          echo "Checking if tag $TAG exists in advplyr/audiobookshelf repository..."
-
-          # Check if tag exists in the original repository
-          if curl -s -f "https://api.github.com/repos/advplyr/audiobookshelf/git/refs/tags/$TAG" > /dev/null; then
-            echo "✅ Tag $TAG exists in advplyr/audiobookshelf"
-            echo "tag_exists=true" >> $GITHUB_OUTPUT
-            echo "release_version=$TAG" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Tag $TAG does not exist in advplyr/audiobookshelf"
-            echo "tag_exists=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-  build:
-    name: Build and Release
-    runs-on: ubuntu-latest
-    needs: validate-tag
-    if: needs.validate-tag.outputs.tag_exists == 'true'
-    permissions:
-      contents: write
-      packages: write
-      id-token: write
-      attestations: write
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
+      version: ${{ steps.version.outputs.version }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY_DOCKER }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY_GHCR }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: Update VERSION file with release tag
+      - name: Validate version format
+        id: version
         run: |
-          # Extract version without 'v' prefix for VERSION file
-          RELEASE_VERSION="${{ needs.validate-tag.outputs.release_version }}"
-          VERSION_NUMBER=${RELEASE_VERSION#v}
-          echo "$VERSION_NUMBER" > VERSION
-          echo "Updated VERSION file to: $VERSION_NUMBER"
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}
-            ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ needs.validate-tag.outputs.release_version }}
-            type=raw,value=latest
-
-      - name: Get version information
-        id: version_info
-        run: |
-          # Get Audiobookshelf version from input
-          ABS_VERSION="${{ github.event.inputs.audiobookshelf_tag }}"
-          echo "audiobookshelf_version=${ABS_VERSION}" >> $GITHUB_OUTPUT
-          echo "Audiobookshelf version: ${ABS_VERSION}"
-
-          # Get project version from VERSION file
-          PROJECT_VERSION=$(cat VERSION)
-          echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
-          echo "Project version: ${PROJECT_VERSION}"
-
-          # Generate timestamp
-          TIMESTAMP=$(date -u +'%Y%m%d%H%M%S')
-          echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
-
-      - name: Generate platform-specific tags
-        id: platform_tags
-        run: |
-          # Convert platform to safe tag format (linux/amd64 -> amd64)
-          PLATFORM_TAG=$(echo "${{ matrix.platform }}" | sed 's/linux\///g' | sed 's/\//-/g')
-          echo "platform_tag=${PLATFORM_TAG}" >> $GITHUB_OUTPUT
-
-          # Create platform-specific image names for release
-          DOCKER_PLATFORM_IMAGE="${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${PLATFORM_TAG}-${{ needs.validate-tag.outputs.release_version }}"
-          GHCR_PLATFORM_IMAGE="${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:${PLATFORM_TAG}-${{ needs.validate-tag.outputs.release_version }}"
-
-          echo "docker_platform_image=${DOCKER_PLATFORM_IMAGE}" >> $GITHUB_OUTPUT
-          echo "ghcr_platform_image=${GHCR_PLATFORM_IMAGE}" >> $GITHUB_OUTPUT
-
-      - name: Build and push release image
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: ${{ matrix.platform }}
-          push: true
-          tags: |
-            ${{ steps.platform_tags.outputs.docker_platform_image }}
-            ${{ steps.platform_tags.outputs.ghcr_platform_image }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
-          sbom: false
-          build-args: |
-            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
-            VERSION=${{ needs.validate-tag.outputs.release_version }}
-            VCS_REF=${{ github.sha }}
-            AUDIOBOOKSHELF_VERSION=${{ steps.version_info.outputs.audiobookshelf_version }}
-            PROJECT_VERSION=${{ steps.version_info.outputs.project_version }}
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          echo "Raw digest: $digest"
-          if [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
-            echo "$digest" > "/tmp/digests/${digest#sha256:}"
-            echo "Exported digest: ${digest#sha256:}"
-          else
-            echo "ERROR: Invalid digest format: $digest"
+          version="${{ github.event.inputs.version }}"
+          if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
+            echo "❌ Invalid version format: $version"
+            echo "Expected format: X.Y.Z or X.Y.Z-suffix"
             exit 1
           fi
+          echo "✅ Version format valid: $version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
-      - name: Upload digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ steps.platform_tags.outputs.platform_tag }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  manifest:
-    name: Create Release Manifest
-    runs-on: ubuntu-latest
-    needs: [validate-tag, build]
-    permissions:
-      contents: write
-      packages: write
-      id-token: write
-      attestations: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Download digests
-        uses: actions/download-artifact@v5
-        with:
-          path: /tmp/digests
-          pattern: digests-*
-          merge-multiple: true
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY_DOCKER }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY_GHCR }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: Get version information
-        id: version_info
+      - name: Check if tag exists
         run: |
-          # Get Audiobookshelf version from input
-          ABS_VERSION="${{ github.event.inputs.audiobookshelf_tag }}"
-          echo "audiobookshelf_version=${ABS_VERSION}" >> $GITHUB_OUTPUT
+          version="${{ steps.version.outputs.version }}"
+          if git rev-parse "v$version" >/dev/null 2>&1; then
+            echo "❌ Tag v$version already exists"
+            exit 1
+          fi
+          echo "✅ Tag v$version is available"
 
-          # Get project version from VERSION file
-          PROJECT_VERSION=$(cat VERSION)
-          echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Create release manifest lists
-        id: manifest_creation
-        working-directory: /tmp/digests
+      - name: Extract changelog
+        id: changelog
         run: |
-          echo "=== Available digest files ==="
-          ls -la
-
-          # Build digest references
-          DOCKER_DIGESTS=""
-          GHCR_DIGESTS=""
-
-          for digest_file in *; do
-            if [ -f "$digest_file" ]; then
-              digest_content=$(cat "$digest_file")
-              echo "Processing digest: $digest_content"
-              DOCKER_DIGESTS="$DOCKER_DIGESTS ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}@$digest_content"
-              GHCR_DIGESTS="$GHCR_DIGESTS ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}@$digest_content"
+          version="${{ steps.version.outputs.version }}"
+          if [[ -f "CHANGELOG.md" ]]; then
+            # Extract changelog section for this version
+            changelog=$(awk "/^## \[?$version\]?/ {flag=1; next} /^## / && flag {exit} flag" CHANGELOG.md)
+            if [[ -n "$changelog" ]]; then
+              echo "✅ Found changelog for version $version"
+              # Save changelog to output (properly escaped)
+              {
+                echo 'changelog<<EOF'
+                echo "$changelog"
+                echo 'EOF'
+              } >> $GITHUB_OUTPUT
+            else
+              echo "⚠️ No changelog found for version $version, using generic message"
+              echo "changelog=Release $version" >> $GITHUB_OUTPUT
             fi
-          done
-
-          # Create release tag manifest lists
-          RELEASE_TAG="${{ needs.validate-tag.outputs.release_version }}"
-
-          echo "Creating manifest list for release tag: $RELEASE_TAG"
-          if [ -n "$DOCKER_DIGESTS" ]; then
-            docker buildx imagetools create --tag ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:$RELEASE_TAG $DOCKER_DIGESTS
+          else
+            echo "⚠️ No CHANGELOG.md found, using generic message"
+            echo "changelog=Release $version" >> $GITHUB_OUTPUT
           fi
 
-          if [ -n "$GHCR_DIGESTS" ]; then
-            docker buildx imagetools create --tag ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:$RELEASE_TAG $GHCR_DIGESTS
+      - name: Run pre-release tests
+        run: |
+          echo "Running pre-release validation..."
+
+          # Build and test container
+          if command -v make >/dev/null 2>&1; then
+            make build || exit 1
+            make test || exit 1
+          else
+            echo "⚠️ Make not available, skipping build tests"
           fi
 
-          # Also create latest tag
-          echo "Creating manifest list for latest tag"
-          if [ -n "$DOCKER_DIGESTS" ]; then
-            docker buildx imagetools create --tag ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:latest $DOCKER_DIGESTS
-          fi
+          # Validate docker-compose configuration
+          docker compose config --quiet || exit 1
 
-          if [ -n "$GHCR_DIGESTS" ]; then
-            docker buildx imagetools create --tag ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:latest $GHCR_DIGESTS
-          fi
+          echo "✅ Pre-release validation completed"
 
-          # Create architecture-specific tags (LinuxServer.io style)
-          platforms=("amd64" "arm64")
-          for platform in "${platforms[@]}"; do
-            arch_tag_release="${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${platform}-$RELEASE_TAG"
-            arch_tag_latest="${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${platform}-latest"
-
-            # Find matching digest for this platform
-            digest_files=(*)
-            case $platform in
-              "amd64")
-                if [ ${#digest_files[@]} -gt 0 ]; then
-                  digest_content=$(cat "${digest_files[0]}")
-                  docker buildx imagetools create --tag "$arch_tag_release" "${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}@$digest_content"
-                  docker buildx imagetools create --tag "$arch_tag_latest" "${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}@$digest_content"
-                fi
-                ;;
-              "arm64")
-                if [ ${#digest_files[@]} -gt 1 ]; then
-                  digest_content=$(cat "${digest_files[1]}")
-                  docker buildx imagetools create --tag "$arch_tag_release" "${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}@$digest_content"
-                  docker buildx imagetools create --tag "$arch_tag_latest" "${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}@$digest_content"
-                fi
-                ;;
-            esac
-          done
-
-          # Get main manifest digest for SBOM
-          MAIN_MANIFEST_DIGEST=$(docker buildx imagetools inspect --raw "${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:$RELEASE_TAG" | sha256sum | cut -d' ' -f1)
-          echo "main_manifest_digest=sha256:${MAIN_MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
-
-      - name: Generate SBOM attestation
-        if: steps.manifest_creation.outputs.main_manifest_digest != ''
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.manifest_creation.outputs.main_manifest_digest }}
-          push-to-registry: true
-
-      - name: Run vulnerability scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:${{ needs.validate-tag.outputs.release_version }}
-          format: 'table'
-          exit-code: '0'
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.create.outputs.id }}
+      upload_url: ${{ steps.create.outputs.upload_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Create Git tag
         run: |
+          version="${{ needs.validate.outputs.version }}"
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          RELEASE_TAG="${{ needs.validate-tag.outputs.release_version }}"
-          git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG based on Audiobookshelf ${{ github.event.inputs.audiobookshelf_tag }}"
-          git push origin "$RELEASE_TAG"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$version" -m "Release v$version"
+          git push origin "v$version"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        id: create
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ needs.validate-tag.outputs.release_version }}
-          name: ${{ needs.validate-tag.outputs.release_version }}
-          generate_release_notes: true
+          tag_name: v${{ needs.validate.outputs.version }}
+          release_name: audiobookshelf v${{ needs.validate.outputs.version }}
           body: |
-            ## 🎯 Release Information
+            # audiobookshelf v${{ needs.validate.outputs.version }}
 
-            **Based on Audiobookshelf:** ${{ github.event.inputs.audiobookshelf_tag }}
-            **Project Version:** ${{ steps.version_info.outputs.project_version }}
-            **Release Date:** ${{ github.event.head_commit.timestamp }}
+            ## Changes
+            ${{ needs.validate.outputs.changelog }}
 
-            ${{ github.event.inputs.release_notes }}
-
-            ## 🐳 Docker Images
-
-            **Multi-Platform Support:**
-            - `linux/amd64`
-            - `linux/arm64`
+            ## Container Images
 
             **Docker Hub:**
             ```bash
-            docker pull ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:${{ needs.validate-tag.outputs.release_version }}
+            docker pull mildman1848/audiobookshelf:${{ needs.validate.outputs.version }}
+            docker pull mildman1848/audiobookshelf:latest
             ```
 
             **GitHub Container Registry:**
             ```bash
-            docker pull ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}:${{ needs.validate-tag.outputs.release_version }}
+            docker pull ghcr.io/mildman1848/audiobookshelf:${{ needs.validate.outputs.version }}
+            docker pull ghcr.io/mildman1848/audiobookshelf:latest
             ```
 
-            **Architecture-Specific Tags (LinuxServer.io style):**
+            ## Architecture Support
+            - ✅ AMD64 (Intel/AMD 64-bit)
+            - ✅ ARM64 (Apple Silicon, ARM64 servers)
+
+            ## Quick Start
             ```bash
-            # AMD64
-            docker pull ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:amd64-${{ needs.validate-tag.outputs.release_version }}
+            # Download docker-compose.yml
+            wget https://raw.githubusercontent.com/mildman1848/audiobookshelf/v${{ needs.validate.outputs.version }}/docker-compose.yml
 
-            # ARM64
-            docker pull ${{ env.REGISTRY_DOCKER }}/${{ env.IMAGE_NAME }}:arm64-${{ needs.validate-tag.outputs.release_version }}
-            ```
+            # Copy configuration template
+            cp .env.example .env
 
-            ## 🏗️ Built With
+            # Edit configuration (set PUID/PGID, ports, etc.)
+            nano .env
 
-            - **Audiobookshelf:** ${{ github.event.inputs.audiobookshelf_tag }}
-            - **LinuxServer.io Alpine Baseimage:** 3.22
-            - **S6 Overlay:** v3
-            - **Multi-Architecture:** Native builds (no emulation)
-
-            ## 🚀 Quick Start
-
-            ```bash
-            git clone https://github.com/mildman1848/audiobookshelf.git
-            cd audiobookshelf
-            make setup
+            # Start container
             docker-compose up -d
             ```
 
-            ## 🔒 Security
-
-            This release includes:
-            - Automated vulnerability scanning with Trivy
-            - SBOM (Software Bill of Materials) attestation
-            - Multi-platform security verification
-            - Container hardening with LinuxServer.io standards
-
-            ## 📖 Documentation
-
-            - [English README](README.md)
-            - [German README](README.de.md)
-            - [Security Documentation](SECURITY.md)
-            - [LinuxServer.io Compliance](LINUXSERVER.md)
+            ## Verification
+            - **Container Image:** `docker buildx imagetools inspect mildman1848/audiobookshelf:${{ needs.validate.outputs.version }}`
+            - **SBOM:** Available as release asset
+            - **Security:** Scanned with Trivy, CodeQL, and TruffleHog
 
             ---
+            **Full Documentation:** [README.md](https://github.com/mildman1848/audiobookshelf/blob/v${{ needs.validate.outputs.version }}/README.md)
 
-            🤖 *This release was created automatically based on Audiobookshelf ${{ github.event.inputs.audiobookshelf_tag }}*
+            🤖 Generated with [Claude Code](https://claude.ai/code)
+          draft: ${{ github.event.inputs.draft == 'true' }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+
+  trigger-docker-build:
+    name: Trigger Docker Build
+    runs-on: ubuntu-latest
+    needs: [validate, create-release]
+    steps:
+      - name: Trigger Docker Build & Publish workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: workflow } = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'docker-publish.yml',
+              ref: 'main',
+              inputs: {
+                tag: '${{ needs.validate.outputs.version }}'
+              }
+            });
+            console.log('✅ Triggered Docker Build & Publish workflow');
+
+      - name: Wait for Docker build completion
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Wait for docker build to complete (with timeout)
+            const maxWaitTime = 30 * 60 * 1000; // 30 minutes
+            const startTime = Date.now();
+
+            while (Date.now() - startTime < maxWaitTime) {
+              const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'docker-publish.yml',
+                per_page: 5
+              });
+
+              const recentRun = runs.workflow_runs.find(run =>
+                run.created_at > new Date(Date.now() - 10 * 60 * 1000).toISOString()
+              );
+
+              if (recentRun) {
+                if (recentRun.status === 'completed') {
+                  if (recentRun.conclusion === 'success') {
+                    console.log('✅ Docker build completed successfully');
+                    return;
+                  } else {
+                    throw new Error('❌ Docker build failed');
+                  }
+                }
+              }
+
+              console.log('🔄 Waiting for Docker build to complete...');
+              await new Promise(resolve => setTimeout(resolve, 30000)); // Wait 30 seconds
+            }
+
+            throw new Error('⏰ Docker build timeout');
+
+  release-summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [validate, create-release, trigger-docker-build]
+    if: always()
+    steps:
+      - name: Release Summary
+        run: |
+          echo "## 🎉 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation | ${{ needs.validate.result }} | Version format, tests, configuration |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ${{ needs.create-release.result }} | Tag creation and release notes |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Images | ${{ needs.trigger-docker-build.result }} | Multi-platform container builds |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.create-release.result }}" == "success" ]]; then
+            echo "🔗 **Release:** [audiobookshelf v${{ needs.validate.outputs.version }}](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.validate.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **Container Images:**" >> $GITHUB_STEP_SUMMARY
+            echo "- \`mildman1848/audiobookshelf:${{ needs.validate.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`ghcr.io/mildman1848/audiobookshelf:${{ needs.validate.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Release creation failed - check logs above**" >> $GITHUB_STEP_SUMMARY
+          fi

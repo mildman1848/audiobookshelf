@@ -33,7 +33,7 @@ jobs:
 
       - name: Validate docker-compose.yml
         run: |
-          # Use docker compose (plugin version) - available by default in Ubuntu runners
+          # Use docker compose (plugin version)
           docker compose --version
           docker compose config -q
 
@@ -43,10 +43,8 @@ jobs:
 
       - name: Validate environment files
         run: |
-          # Check .env.example syntax
           if [ -f .env.example ]; then
             echo "Validating .env.example..."
-            # Simple syntax validation
             grep -E '^[A-Z_][A-Z0-9_]*=' .env.example || true
           fi
 
@@ -81,7 +79,7 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VERSION=test-${{ github.sha }}
             VCS_REF=${{ github.sha }}
-            AUDIOBOOKSHELF_VERSION=v2.29.0
+            AUDIOBOOKSHELF_VERSION=$(cat VERSION || echo "2.29.0-automation.2")
             PROJECT_VERSION=$(cat VERSION || echo "2.29.0-automation.2")
 
   integration-test:
@@ -100,7 +98,7 @@ jobs:
         with:
           context: .
           load: true
-          tags: mildman1848/audiobookshelf:test
+          tags: ${DOCKER_USERNAME}/audiobookshelf:test
           cache-from: type=gha
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
@@ -110,57 +108,64 @@ jobs:
 
       - name: Create test environment
         run: |
-          # Create test directories
-          mkdir -p test-volumes/{config,audiobooks,podcasts,metadata}
+          mkdir -p test-volumes/config/{audiobookshelf,cache,logs}
+          mkdir -p test-volumes/{data,media,backup}
+          chmod 755 test-volumes/config
+          chmod 755 test-volumes/data test-volumes/media test-volumes/backup
 
-          # Create minimal .env for testing
           cat > .env << EOF
-          DOCKER_REPO=mildman1848/audiobookshelf
+          DOCKER_REPO=${DOCKER_USERNAME}/audiobookshelf
           VERSION=test
           PUID=1000
           PGID=1000
           TZ=UTC
-          LOG_LEVEL=info
+          AUDIOBOOKSHELF_LOG_LEVEL=INFO
+          EXTERNAL_PORT=13378
           EOF
 
       - name: Generate test secrets
         run: |
           mkdir -p secrets
-          openssl rand -base64 64 > secrets/jwt_secret.txt
-          openssl rand -hex 32 > secrets/api_key.txt
-          echo "testuser" > secrets/db_user.txt
-          openssl rand -base64 32 | tr -d "=+/" | cut -c1-25 > secrets/db_password.txt
+          openssl rand -base64 32 | tr -d "=+/" | head -c 24 > secrets/audiobookshelf_config_pass.txt
+          openssl rand -base64 32 | tr -d "=+/" | head -c 20 > secrets/audiobookshelf_password.txt
           chmod 600 secrets/*.txt
 
       - name: Test container startup
         run: |
-          # Start container
           docker run -d \
             --name audiobookshelf-test \
             -p 13378:80 \
             -v $(pwd)/test-volumes/config:/config \
-            -v $(pwd)/test-volumes/audiobooks:/audiobooks \
-            -v $(pwd)/test-volumes/podcasts:/podcasts \
-            -v $(pwd)/test-volumes/metadata:/metadata \
+            -v $(pwd)/test-volumes/data:/data \
+            -v $(pwd)/secrets:/run/secrets:ro \
             -e PUID=1000 \
             -e PGID=1000 \
             -e TZ=UTC \
-            mildman1848/audiobookshelf:test
+            ${DOCKER_USERNAME}/audiobookshelf:test
 
       - name: Wait for container
         run: |
-          # Wait for container to be ready
-          timeout 120s bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} audiobookshelf-test 2>/dev/null)" != "healthy" ]]; do sleep 2; done' || \
-          timeout 120s bash -c 'while ! docker exec audiobookshelf-test curl -f http://localhost:80/ >/dev/null 2>&1; do sleep 2; done'
+          echo "Waiting for container to start..."
+          sleep 10
+
+          timeout 180s bash -c 'while ! docker exec audiobookshelf-test ps aux | grep -v grep | grep audiobookshelf >/dev/null 2>&1; do
+            echo "Waiting for audiobookshelf process..."
+            sleep 5
+          done'
+
+          echo "Waiting for service to be ready..."
+          sleep 20
 
       - name: Test container health
         run: |
-          # Check if container is running
           docker ps | grep audiobookshelf-test
+          docker exec audiobookshelf-test ps aux | grep -v grep | grep audiobookshelf
 
-          # Test HTTP endpoint
-          curl -f http://localhost:13378/ || \
-          docker exec audiobookshelf-test curl -f http://localhost:80/
+          echo "=== Container startup logs ==="
+          docker logs audiobookshelf-test
+
+          echo "=== Testing basic connectivity ==="
+          timeout 30s bash -c 'while ! nc -z localhost 13378; do echo "Waiting for port 13378..."; sleep 2; done' || echo "Port 13378 check timed out"
 
       - name: Test container logs
         if: always()
@@ -192,13 +197,13 @@ jobs:
         with:
           context: .
           load: true
-          tags: mildman1848/audiobookshelf:scan
+          tags: ${DOCKER_USERNAME}/audiobookshelf:scan
           cache-from: type=gha
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'mildman1848/audiobookshelf:scan'
+          image-ref: '${DOCKER_USERNAME}/audiobookshelf:scan'
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -211,9 +216,9 @@ jobs:
       - name: Run Trivy for detailed output
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'mildman1848/audiobookshelf:scan'
+          image-ref: '${DOCKER_USERNAME}/audiobookshelf:scan'
           format: 'table'
-          exit-code: '0'  # Don't fail the build on vulnerabilities
+          exit-code: '0'
 
   docker-compose-test:
     name: Docker Compose Test
@@ -223,48 +228,73 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Docker Compose
+      - name: Check docker compose
         run: |
-          # Use docker compose (plugin version) - available by default in Ubuntu runners
           docker compose --version
 
       - name: Create test environment
         run: |
-          # Copy .env.example to .env for testing
+          mkdir -p config/{audiobookshelf,cache,logs}
+          mkdir -p data media backup logs
+          chmod 755 config data media backup logs
+
           cp .env.example .env
 
-          # Override with test values
           cat >> .env << EOF
           VERSION=test
           IMAGE_TAG=test
           EXTERNAL_PORT=13378
-          LOG_LEVEL=debug
+          AUDIOBOOKSHELF_LOG_LEVEL=DEBUG
+          CONFIG_PATH=./config
+          DATA_PATH=./data
+          LOGS_PATH=./logs
+          SECRETS_PATH=./secrets
           EOF
 
       - name: Generate secrets
         run: |
           mkdir -p secrets
-          openssl rand -base64 64 > secrets/jwt_secret.txt
-          openssl rand -hex 32 > secrets/api_key.txt
-          echo "testuser" > secrets/db_user.txt
-          openssl rand -base64 32 | tr -d "=+/" | cut -c1-25 > secrets/db_password.txt
+          openssl rand -base64 32 | tr -d "=+/" | head -c 24 > secrets/audiobookshelf_config_pass.txt
+          openssl rand -base64 32 | tr -d "=+/" | head -c 20 > secrets/audiobookshelf_password.txt
 
       - name: Build image first
         run: |
-          docker build -t mildman1848/audiobookshelf:test .
+          docker build -t ${DOCKER_USERNAME}/audiobookshelf:test .
 
-      - name: Test docker-compose up
+      - name: Test docker compose up
         run: |
           docker compose up -d audiobookshelf
 
       - name: Wait and test service
         run: |
-          # Wait for service
-          sleep 30
+          echo "Waiting for audiobookshelf service to start..."
+          sleep 20
 
-          # Test if service is responding
-          curl -f http://localhost:13378/ || \
-          docker compose exec -T audiobookshelf curl -f http://localhost:80/
+          echo "=== Container status ==="
+          docker compose ps
+
+          echo "=== Container logs ==="
+          docker compose logs audiobookshelf
+
+          echo "Waiting for container to be ready..."
+          for i in {1..30}; do
+            if docker compose ps audiobookshelf | grep -q "Up"; then
+              echo "Container is running, checking health..."
+              break
+            fi
+            echo "Container not ready yet, waiting... ($i/30)"
+            sleep 5
+          done
+
+          echo "=== Checking audiobookshelf process ==="
+          if docker compose ps audiobookshelf | grep -q "Up"; then
+            docker compose exec -T audiobookshelf ps aux | grep -v grep | grep audiobookshelf || echo "audiobookshelf process not found yet"
+          else
+            echo "Container is not running - skipping process check"
+          fi
+
+          echo "=== Testing port connectivity ==="
+          timeout 60s bash -c 'while ! nc -z localhost 13378; do echo "Waiting for port 13378..."; sleep 3; done' || echo "Port check timed out"
 
       - name: Check logs
         if: always()

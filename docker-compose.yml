@@ -3,213 +3,98 @@
 
 services:
   audiobookshelf:
-    image: ${DOCKER_REPO:-mildman1848/audiobookshelf}:${VERSION:-latest}
-    container_name: ${CONTAINER_NAME:-audiobookshelf}
+    image: ${IMAGE_NAME:-mildman1848/audiobookshelf}:${IMAGE_TAG:-latest}
+    container_name: audiobookshelf
+    hostname: audiobookshelf
     restart: unless-stopped
+
+    # Security hardening (basic)
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+
+    # Network configuration
     ports:
-      - "${HOST_BIND:-127.0.0.1}:${EXTERNAL_PORT:-13378}:${PORT:-80}"
-    volumes:
-      - ${HOST_CONFIG_PATH:-./config}:/config
-      - ${HOST_AUDIOBOOKS_PATH:-./data/audiobooks}:/audiobooks
-      - ${HOST_PODCASTS_PATH:-./data/podcasts}:/podcasts
-      - ${HOST_METADATA_PATH:-./data/metadata}:/metadata
+      - "${HOST:-127.0.0.1}:${EXTERNAL_PORT:-13378}:80"
 
-      # LinuxServer.io Custom Scripts Support (optional)
-      # - ${HOST_CUSTOM_SCRIPTS:-./custom-scripts}:/custom-cont-init.d:ro
-
-      # LinuxServer.io Custom Services Support (optional)
-      # - ${HOST_CUSTOM_SERVICES:-./custom-services}:/custom-services.d:ro
+    # Environment configuration
     environment:
-      # LinuxServer.io Base Configuration
+      # LinuxServer.io base variables
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - TZ=${TZ:-Europe/Berlin}
+      - TZ=${TZ:-Etc/UTC}
       - UMASK=${UMASK:-022}
-      - LSIO_FIRST_PARTY=false
 
-      # LinuxServer.io Docker Mods Support
-      - DOCKER_MODS=${DOCKER_MODS:-}
-
-      # LinuxServer.io FILE__ Secrets (preferred method)
-      - FILE__JWT_SECRET=/run/secrets/audiobookshelf_jwt_secret
-      - FILE__API_KEY=/run/secrets/audiobookshelf_api_key
-      - FILE__DB_USER=/run/secrets/audiobookshelf_db_user
-      - FILE__DB_PASSWORD=/run/secrets/audiobookshelf_db_password
-
-      # Audiobookshelf Core Configuration
-      - HOST=${HOST:-0.0.0.0}
-      - PORT=${PORT:-80}
-      - HOST_BIND=${HOST_BIND:-127.0.0.1}
+      # Audiobookshelf core configuration (SQLite3 as default)
       - CONFIG_PATH=${CONFIG_PATH:-/config}
       - METADATA_PATH=${METADATA_PATH:-/metadata}
       - BACKUP_PATH=${BACKUP_PATH:-/config/backups}
 
-      # Binary Paths
-      - FFMPEG_PATH=${FFMPEG_PATH:-/usr/bin/ffmpeg}
-      - FFPROBE_PATH=${FFPROBE_PATH:-/usr/bin/ffprobe}
-
-      # Application Settings
+      # Application settings
       - SOURCE=${SOURCE:-docker}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=${NODE_ENV:-production}
 
-      # Security Configuration
+      # Security configuration
       - CORS_ENABLED=${CORS_ENABLED:-0}
       - DISABLE_SSRF=${DISABLE_SSRF:-0}
       - ALLOW_IFRAMES=${ALLOW_IFRAMES:-0}
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
       - SESSION_COOKIE_HTTP_ONLY=${SESSION_COOKIE_HTTP_ONLY:-true}
 
-      # Performance Settings
+      # Binary paths
+      - FFMPEG_PATH=${FFMPEG_PATH:-/usr/bin/ffmpeg}
+      - FFPROBE_PATH=${FFPROBE_PATH:-/usr/bin/ffprobe}
+
+      # Performance settings
       - MAX_CONCURRENT_SCANS=${MAX_CONCURRENT_SCANS:-1}
       - SCANNER_DISABLE_WATCHER=${SCANNER_DISABLE_WATCHER:-false}
 
-      # Feature Flags
+      # Feature flags
       - ENABLE_EXPERIMENTAL_FEATURES=${ENABLE_EXPERIMENTAL_FEATURES:-false}
       - ENABLE_FILE_WATCHER=${ENABLE_FILE_WATCHER:-true}
       - SCANNER_FIND_COVERS=${SCANNER_FIND_COVERS:-true}
 
-      # Development/Debug
-      - NODE_ENV=${NODE_ENV:-production}
-      - DEBUG_MODE=${DEBUG_MODE:-false}
-      - VERBOSE_LOGGING=${VERBOSE_LOGGING:-false}
+      # Optional: FILE__ prefix secrets support
+      - FILE__JWT_SECRET=/run/secrets/audiobookshelf_jwt_secret
+
+    # Volume mounts
+    volumes:
+      - ${CONFIG_PATH:-./config}:/config
+      - ${AUDIOBOOKS_PATH:-./data/audiobooks}:/audiobooks
+      - ${PODCASTS_PATH:-./data/podcasts}:/podcasts
+      - ${METADATA_PATH:-./data/metadata}:/metadata
+      - ${LOGS_PATH:-./logs}:/config/logs
+
+    # Optional: Docker secrets support
     secrets:
       - audiobookshelf_jwt_secret
-      - audiobookshelf_api_key
+
+    # Health check (process-based for security)
     healthcheck:
       test: ["CMD", "sh", "-c", "ps aux | grep -v grep | grep audiobookshelf || exit 1"]
-      interval: ${HEALTH_CHECK_INTERVAL:-30s}
-      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
-      retries: ${HEALTH_CHECK_RETRIES:-3}
+      interval: 30s
+      timeout: 10s
+      retries: 3
       start_period: 40s
-    security_opt:
-      - no-new-privileges:true
-    read_only: false
-    tmpfs:
-      - /tmp
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
-      - DAC_OVERRIDE
 
-  # Example with external database (optional)
-  audiobookshelf-with-db:
-    image: ${DOCKER_REPO:-mildman1848/audiobookshelf}:${VERSION:-latest}
-    container_name: ${CONTAINER_NAME_DB:-audiobookshelf-db}
-    restart: unless-stopped
-    ports:
-      - "${EXTERNAL_PORT_DB:-13379}:${PORT:-80}"
-    volumes:
-      - ${HOST_CONFIG_PATH_DB:-./config-db}:/config
-      - ${HOST_AUDIOBOOKS_PATH:-./data/audiobooks}:/audiobooks
-      - ${HOST_PODCASTS_PATH:-./data/podcasts}:/podcasts
-      - ${HOST_METADATA_PATH:-./data/metadata}:/metadata
-    environment:
-      # User/Group Configuration
-      - PUID=${PUID:-1000}
-      - PGID=${PGID:-1000}
-      - TZ=${TZ:-Europe/Berlin}
+    # Labels for better organization
+    labels:
+      - "org.opencontainers.image.title=audiobookshelf"
+      - "org.opencontainers.image.description=Audiobookshelf - Self-hosted audiobook and podcast server with S6 Overlay"
+      - "org.opencontainers.image.vendor=Mildman1848"
 
-      # Database Configuration
-      - DB_TYPE=${DB_TYPE:-postgres}
-      - DB_HOST=${DB_HOST:-postgres}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_NAME=${DB_NAME:-audiobookshelf}
-
-      # LinuxServer.io FILE__ Secrets (preferred method)
-      - FILE__JWT_SECRET=/run/secrets/audiobookshelf_jwt_secret
-      - FILE__DB_USER=/run/secrets/audiobookshelf_db_user
-      - FILE__DB_PASSWORD=/run/secrets/audiobookshelf_db_password
-
-      # All other environment variables from main service
-      - HOST=${HOST:-0.0.0.0}
-      - PORT=${PORT:-80}
-      - CONFIG_PATH=${CONFIG_PATH:-/config}
-      - METADATA_PATH=${METADATA_PATH:-/metadata}
-      - BACKUP_PATH=${BACKUP_PATH:-/config/backups}
-      - FFMPEG_PATH=${FFMPEG_PATH:-/usr/bin/ffmpeg}
-      - FFPROBE_PATH=${FFPROBE_PATH:-/usr/bin/ffprobe}
-      - SOURCE=${SOURCE:-docker}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - CORS_ENABLED=${CORS_ENABLED:-0}
-      - DISABLE_SSRF=${DISABLE_SSRF:-0}
-      - ALLOW_IFRAMES=${ALLOW_IFRAMES:-0}
-      - NODE_ENV=${NODE_ENV:-production}
-    secrets:
-      - audiobookshelf_db_user
-      - audiobookshelf_db_password
-      - audiobookshelf_jwt_secret
-    depends_on:
-      postgres:
-        condition: service_healthy
-    profiles:
-      - with-db
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
-      - DAC_OVERRIDE
-
-  postgres:
-    image: postgres:${POSTGRES_VERSION:-15}-alpine
-    container_name: ${POSTGRES_CONTAINER_NAME:-audiobookshelf-postgres}
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_NAME:-audiobookshelf}
-      POSTGRES_USER_FILE: /run/secrets/audiobookshelf_db_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/audiobookshelf_db_password
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - /etc/passwd:/etc/passwd:ro
-    secrets:
-      - audiobookshelf_db_user
-      - audiobookshelf_db_password
-    profiles:
-      - with-db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/audiobookshelf_db_user) -d ${DB_NAME:-audiobookshelf}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    security_opt:
-      - no-new-privileges:true
-    tmpfs:
-      - /tmp
-      - /var/run/postgresql
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
-      - DAC_OVERRIDE
-
+# Docker secrets (optional)
 secrets:
-  audiobookshelf_db_user:
-    file: ${SECRETS_PATH:-./secrets}/db_user.txt
-  audiobookshelf_db_password:
-    file: ${SECRETS_PATH:-./secrets}/db_password.txt
   audiobookshelf_jwt_secret:
-    file: ${SECRETS_PATH:-./secrets}/jwt_secret.txt
-  audiobookshelf_api_key:
-    file: ${SECRETS_PATH:-./secrets}/api_key.txt
+    file: ${SECRETS_PATH:-./secrets}/audiobookshelf_jwt_secret.txt
 
-volumes:
-  postgres_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${POSTGRES_DATA_PATH:-./postgres_data}
-
+# Networks (optional)
 networks:
   default:
     name: ${NETWORK_NAME:-audiobookshelf_network}
