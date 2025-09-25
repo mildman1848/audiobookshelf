@@ -10,8 +10,8 @@
   🎧 Audiobookshelf v2.29.0 🎧
   Enhanced Security & Docker Secrets Implementation
 
-  Version: latest
-  Built: 2025-09-19 18:17:14 UTC
+  Version: 2.29.0-3
+  Built: 2025-09-25 08:50:00 UTC
   Source: https://github.com/mildman1848/audiobookshelf
 
   Based on LinuxServer.io Alpine + S6 Overlay v3
