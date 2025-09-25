@@ -4,7 +4,7 @@
 FROM advplyr/audiobookshelf:2.29.0 AS audiobookshelf-base
 
 # Build our custom image based on LinuxServer.io
-FROM ghcr.io/linuxserver/baseimage-alpine:3.22-25712cc1-ls9
+FROM ghcr.io/linuxserver/baseimage-alpine:3.22-25712cc1-ls10
 
 # Set version and security labels
 ARG BUILD_DATE
