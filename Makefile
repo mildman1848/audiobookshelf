@@ -347,6 +347,47 @@ release: validate build test security-scan ## Complete release workflow
 	@echo "$(GREEN)Release workflow completed successfully!$(NC)"
 	@echo "To push to registry, run: make push"
 
+## Baseimage management targets
+baseimage-check: ## Check for LinuxServer.io baseimage updates
+	@echo "$(GREEN)Checking for LinuxServer.io baseimage updates...$(NC)"
+	@CURRENT=$$(grep -o 'baseimage-alpine:3.22-[a-f0-9]*-ls[0-9]*' Dockerfile | head -1 | cut -d':' -f2); \
+	LATEST=$$(curl -s "https://api.github.com/repos/linuxserver/docker-baseimage-alpine/releases/latest" | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4); \
+	echo "$(BLUE)Current baseimage: $$CURRENT$(NC)"; \
+	echo "$(BLUE)Latest baseimage: $$LATEST$(NC)"; \
+	if [ "$$CURRENT" != "$$LATEST" ]; then \
+		echo "$(YELLOW)⚠️  Update available: $$CURRENT → $$LATEST$(NC)"; \
+		echo "$(CYAN)Run 'make baseimage-test' to test the new version$(NC)"; \
+	else \
+		echo "$(GREEN)✅ Already using latest baseimage$(NC)"; \
+	fi
+
+baseimage-test: ## Test new LinuxServer.io baseimage version
+	@echo "$(GREEN)Testing new LinuxServer.io baseimage...$(NC)"
+	@if [ ! -f scripts/baseimage-update-test.sh ]; then \
+		echo "$(YELLOW)⚠️  Baseimage test script not found. Creating from template...$(NC)"; \
+		mkdir -p scripts; \
+		curl -s https://raw.githubusercontent.com/mildman1848/template/main/scripts/baseimage-update-test.sh > scripts/baseimage-update-test.sh; \
+		chmod +x scripts/baseimage-update-test.sh; \
+		echo "$(GREEN)✓ Test script downloaded$(NC)"; \
+	fi
+	@./scripts/baseimage-update-test.sh
+	@echo "$(CYAN)📋 Review test report: BASEIMAGE_UPDATE_REPORT.md$(NC)"
+
+baseimage-update: ## Update to latest LinuxServer.io baseimage (run baseimage-test first!)
+	@echo "$(YELLOW)⚠️  This will update the baseimage in Dockerfile$(NC)"
+	@echo "$(RED)🛑 Have you run 'make baseimage-test' and verified compatibility?$(NC)"
+	@read -p "Continue with baseimage update? [y/N] " -n 1 -r; echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		LATEST=$$(curl -s "https://api.github.com/repos/linuxserver/docker-baseimage-alpine/releases/latest" | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4); \
+		echo "$(GREEN)Updating to baseimage: $$LATEST$(NC)"; \
+		sed -i.bak "s/baseimage-alpine:3.22-[a-f0-9]*-ls[0-9]*/baseimage-alpine:$$LATEST/g" Dockerfile; \
+		echo "$(GREEN)✅ Dockerfile updated$(NC)"; \
+		echo "$(YELLOW)📋 Backup created: Dockerfile.bak$(NC)"; \
+		echo "$(CYAN)🔄 Run 'make build && make test' to verify the update$(NC)"; \
+	else \
+		echo "$(BLUE)Update cancelled$(NC)"; \
+	fi
+
 ## Secrets management targets
 secrets-generate: ## Generate secure secrets for audiobookshelf
 	@echo "$(GREEN)Generating secure secrets...$(NC)"

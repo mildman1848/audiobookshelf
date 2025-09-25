@@ -28,7 +28,7 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       io.mildman1848.audiobookshelf.version="${AUDIOBOOKSHELF_VERSION}" \
       io.mildman1848.project.version="${PROJECT_VERSION}" \
       io.mildman1848.branding="custom" \
-      io.linuxserver.baseimage="ghcr.io/linuxserver/baseimage-alpine:3.22-25712cc1-ls9" \
+      io.linuxserver.baseimage="ghcr.io/linuxserver/baseimage-alpine:3.22-02acf855-ls10" \
       io.linuxserver.s6-overlay="v3"
 
 # LinuxServer.io standard environment variables

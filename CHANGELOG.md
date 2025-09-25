@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.29.0-3] - 2025-09-25
+
+### 🔧 Build & Infrastructure Updates
+- **LinuxServer.io Baseimage**: Fixed baseimage label reference to latest `3.22-02acf855-ls10`
+- **Baseimage Testing**: Added comprehensive baseimage update testing system with Make targets
+- **GitHub Actions**: Fixed Docker build failures caused by outdated baseimage references
+
+### 📝 File Management
+- **gitignore**: Added baseimage testing files (BASEIMAGE_UPDATE_REPORT.md, baseimage-test-*.log, baseimage-test-*.json)
+- **Security**: Enhanced ignored patterns for security scan results and testing artifacts
+
+### 🛠️ Make Command Extensions
+- `make baseimage-check`: Check for LinuxServer.io baseimage updates
+- `make baseimage-test`: Test new LinuxServer.io baseimage version
+- `make baseimage-update`: Update to latest LinuxServer.io baseimage
+
+### ✅ Validation Status
+- **Upstream Version**: v2.29.0 confirmed as current (no update needed)
+- **Base Image**: 3.22-02acf855-ls10 confirmed as latest
+- **Docker Labels**: Fixed inconsistent baseimage references
+- **CI/CD Pipeline**: All workflows now pass successfully
+
 ## [2.29.0-2] - 2025-09-24
 
 ### 📊 Version Management Implementation
