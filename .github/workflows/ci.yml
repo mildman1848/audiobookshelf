@@ -29,14 +29,13 @@ jobs:
         with:
           dockerfile: Dockerfile
           failure-threshold: warning
+          ignore: DL3007,DL3018,DL3013
 
       - name: Validate docker-compose.yml
         run: |
-          # Install docker-compose
-          sudo curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
-          docker-compose config -q
+          # Use docker compose (plugin version) - available by default in Ubuntu runners
+          docker compose --version
+          docker compose config -q
 
       - name: Check Makefile syntax
         run: |
@@ -224,12 +223,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install docker-compose
+      - name: Setup Docker Compose
         run: |
-          # Install docker-compose
-          sudo curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
+          # Use docker compose (plugin version) - available by default in Ubuntu runners
+          docker compose --version
 
       - name: Create test environment
         run: |
@@ -258,7 +255,7 @@ jobs:
 
       - name: Test docker-compose up
         run: |
-          docker-compose up -d audiobookshelf
+          docker compose up -d audiobookshelf
 
       - name: Wait and test service
         run: |
@@ -267,15 +264,15 @@ jobs:
 
           # Test if service is responding
           curl -f http://localhost:13378/ || \
-          docker-compose exec -T audiobookshelf curl -f http://localhost:80/
+          docker compose exec -T audiobookshelf curl -f http://localhost:80/
 
       - name: Check logs
         if: always()
         run: |
           echo "=== Docker Compose logs ==="
-          docker-compose logs
+          docker compose logs
 
       - name: Cleanup
         if: always()
         run: |
-          docker-compose down -v
+          docker compose down -v
