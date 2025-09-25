@@ -56,6 +56,11 @@ make env-validate           # Validate .env configuration (enhanced checks)
 make secrets-info           # Show current secrets status with details
 make secrets-rotate         # Rotate secrets (with backup and stronger encryption)
 make secrets-clean          # Clean up old secret backups
+
+# LinuxServer.io Baseimage Management (2025-09-25)
+make baseimage-check        # Check for LinuxServer.io baseimage updates
+make baseimage-test         # Test new LinuxServer.io baseimage version
+make baseimage-update       # Update to latest LinuxServer.io baseimage
 ```
 
 ### Docker Compose Operations
@@ -106,6 +111,10 @@ init-branding � init-mods-package-install � init-custom-files � init-secre
 - ✅ Fixed docker-compose command not found issues in CI workflow
 - ✅ Resolved TruffleHog BASE/HEAD commit scanning issues
 - ✅ Updated GHCR authentication to use GHCR_TOKEN for proper package permissions
+- ✅ **Baseimage Testing System (2025-09-25)**: Added comprehensive baseimage update testing framework
+- ✅ **Version Management**: Updated container branding to v2.29.0 with accurate build timestamps
+- ✅ **CI Docker Compose Fix**: Fixed IMAGE_TAG configuration for local built images instead of DockerHub
+- ✅ **File Management**: Enhanced .gitignore patterns for baseimage testing artifacts
 - ✅ Implemented comprehensive version management system (VERSION file + workflow integration)
 - ✅ **Security Achievement**: Reduced vulnerabilities from 28 to only 5 (82% improvement)
 - ✅ Finalized UPSTREAM_AUTOMATION_EVALUATION.md with complete implementation status
