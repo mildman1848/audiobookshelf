@@ -137,12 +137,7 @@ jobs:
           EOF
 
       - name: Generate test secrets
-        run: |
-          mkdir -p secrets
-          openssl rand -base64 32 | tr -d "=+/" | head -c 24 > secrets/audiobookshelf_config_pass.txt
-          openssl rand -base64 32 | tr -d "=+/" | head -c 20 > secrets/audiobookshelf_password.txt
-          openssl rand -base64 48 | tr -d "=+/" | head -c 64 > secrets/audiobookshelf_jwt_secret.txt
-          chmod 600 secrets/*.txt
+        run: make secrets-generate-ci
 
       - name: Test container startup
         run: |
@@ -266,13 +261,7 @@ jobs:
           EOF
 
       - name: Generate secrets
-        run: |
-          mkdir -p secrets
-          openssl rand -base64 32 | tr -d "=+/" | head -c 24 > secrets/audiobookshelf_config_pass.txt
-          openssl rand -base64 32 | tr -d "=+/" | head -c 20 > secrets/audiobookshelf_password.txt
-          openssl rand -base64 32 | tr -d "=+/" | head -c 20 > secrets/audiobookshelf_db_password.txt
-          echo "audiobookshelf" > secrets/audiobookshelf_db_user.txt
-          chmod 600 secrets/*.txt
+        run: make secrets-generate-ci
 
       - name: Build image first
         run: |
