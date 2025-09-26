@@ -111,7 +111,7 @@ jobs:
         with:
           context: .
           load: true
-          tags: mildman1848/audiobookshelf:test
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:test
           cache-from: type=gha
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
@@ -127,7 +127,7 @@ jobs:
           chmod 755 test-volumes/data test-volumes/media test-volumes/backup
 
           cat > .env << EOF
-          DOCKER_REPO=mildman1848/audiobookshelf
+          DOCKER_REPO=${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf
           VERSION=test
           PUID=1000
           PGID=1000
@@ -154,7 +154,7 @@ jobs:
             -e PUID=1000 \
             -e PGID=1000 \
             -e TZ=UTC \
-            mildman1848/audiobookshelf:test
+            ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:test
 
       - name: Wait for container
         run: |
@@ -210,13 +210,13 @@ jobs:
         with:
           context: .
           load: true
-          tags: mildman1848/audiobookshelf:scan
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:scan
           cache-from: type=gha
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'mildman1848/audiobookshelf:scan'
+          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:scan'
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -229,7 +229,7 @@ jobs:
       - name: Run Trivy for detailed output
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'mildman1848/audiobookshelf:scan'
+          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:scan'
           format: 'table'
           exit-code: '0'
 
@@ -269,10 +269,13 @@ jobs:
           mkdir -p secrets
           openssl rand -base64 32 | tr -d "=+/" | head -c 24 > secrets/audiobookshelf_config_pass.txt
           openssl rand -base64 32 | tr -d "=+/" | head -c 20 > secrets/audiobookshelf_password.txt
+          openssl rand -base64 32 | tr -d "=+/" | head -c 20 > secrets/audiobookshelf_db_password.txt
+          echo "audiobookshelf" > secrets/audiobookshelf_db_user.txt
+          chmod 600 secrets/*.txt
 
       - name: Build image first
         run: |
-          docker build -t mildman1848/audiobookshelf:test .
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:test .
 
       - name: Test docker compose up
         run: |
