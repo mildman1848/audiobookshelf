@@ -580,7 +580,6 @@ The project includes automated monitoring of upstream dependencies:
 
 **Monitoring Schedule**: Monday and Thursday at 6 AM UTC
 
-See [UPSTREAM_AUTOMATION_EVALUATION.md](UPSTREAM_AUTOMATION_EVALUATION.md) for detailed implementation strategy.
 
 ### 🔧 Setup Requirements
 

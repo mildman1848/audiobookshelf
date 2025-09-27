@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.29.0-5] - 2025-09-27
+
+### 🔧 GitHub Actions Workflow Fixes
+- **Fixed Docker workflow errors**: Resolved manifest inspection failures in `docker-publish.yml`
+- **Improved shell syntax**: Changed problematic `for` loops to proper `while read` loops for GitHub Actions
+- **Enhanced error handling**: Added null checks for tag processing in workflow scripts
+- **Template propagation**: Applied same fixes to template workflows to prevent future occurrences
+
+### 📋 Pre-Push Validation & Quality Assurance
+- **Build validation**: All Docker builds completed successfully (AMD64/ARM64)
+- **Container testing**: Health checks and functionality tests passed
+- **Hadolint validation**: Dockerfile security and best practices verified
+- **Version management**: Upstream version checks implemented and passing
+
+### 🛡️ Security & Standards
+- **Updated configuration files**: Enhanced .gitignore, .dockerignore, .prettier patterns
+- **Documentation cleanup**: Removed outdated upstream monitor evaluation references
+- **Version badges**: Updated README badges to reflect current VERSION file content
+
 ## [2.29.0-4] - 2025-09-25
 
 ### 🛠️ CI/CD Standardization & Modernization
