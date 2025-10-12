@@ -3,7 +3,6 @@
 
 # Ignore specific rules with justification
 ignored:
-  - DL3003  # cd instead of WORKDIR (needed for git operations)
   - DL3018  # Pin versions in apk add (LinuxServer.io manages versions)
   - DL3059  # Multiple consecutive RUN (multi-stage build structure)
   - DL4006  # Set pipefail (Alpine shell compatibility)
