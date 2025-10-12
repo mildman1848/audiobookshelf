@@ -70,16 +70,11 @@ jobs:
 
             # Get release information
             release_url=$(echo "$latest_release" | jq -r '.html_url // ""')
-            release_body=$(echo "$latest_release" | jq -r '.body // ""' | head -c 500)
             release_date=$(echo "$latest_release" | jq -r '.published_at // .created_at // ""')
 
             echo "release_url=$release_url" >> $GITHUB_OUTPUT
             echo "release_date=$release_date" >> $GITHUB_OUTPUT
-            {
-              echo 'release_notes<<EOF'
-              echo "$release_body"
-              echo 'EOF'
-            } >> $GITHUB_OUTPUT
+            # Note: release_notes intentionally not included to avoid @mention notifications
 
           else
             echo "new_version_available=false" >> $GITHUB_OUTPUT
@@ -133,8 +128,8 @@ jobs:
             - **Release Date:** ${{ steps.version-check.outputs.release_date }}
             - **Release URL:** ${{ steps.version-check.outputs.release_url }}
 
-            ### Release Notes
-            ${{ steps.version-check.outputs.release_notes }}
+            > **Note:** Release notes are not included to avoid sending notifications to mentioned users.
+            > Please review the release notes at the Release URL above.
 
             ### Update Checklist
             - [ ] Review upstream release notes and changelog
