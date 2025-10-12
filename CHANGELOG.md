@@ -7,6 +7,111 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.30.0-1] - 2025-10-12
+
+### 🚨 BREAKING CHANGE
+
+- **JWT_SECRET renamed to JWT_SECRET_KEY**: audiobookshelf v2.26.0+ uses `JWT_SECRET_KEY` instead of `JWT_SECRET`
+  - Updated docker-compose.yml FILE__ prefix mapping
+  - Updated S6 init-secrets script to export correct variable name
+  - **Action Required**: Regenerate secrets with `make secrets-generate`
+
+### 🔐 Secret Management Overhaul
+
+- **Fixed JWT_SECRET_KEY loading**: Container now correctly loads secrets from Docker secrets
+- **Removed unused secrets**: Eliminated API_KEY, DB_USER, DB_PASSWORD (not used by audiobookshelf)
+- **Updated Makefile**: `secrets-generate` now creates only JWT_SECRET_KEY + SESSION_SECRET
+- **Comprehensive .env.example**: Complete rewrite with 278 lines covering all 50+ audiobookshelf ENVs
+  - 9 categorized sections (Container, Filesystem, Network, Security, etc.)
+  - Links to official audiobookshelf documentation
+  - FILE__ prefix patterns for secret management
+
+### 🛡️ GitHub Actions Security Enhancements
+
+- **Removed Snyk dependency-scan**: Replaced with Docker Scout (free, no API key required)
+- **Added Docker Scout CVE scanning**: Full SARIF support, uploads to GitHub Security tab
+- **Added .hadolint.yaml**: Dockerfile linting configuration with justified rule exceptions
+  - DL3018 ignored (LinuxServer.io manages Alpine package versions)
+  - DL3059 ignored (Multi-stage build structure requires multiple RUN commands)
+  - DL4006 ignored (Alpine shell compatibility)
+- **Enhanced greetings.yml**: Added pre-merge checklist for contributors
+- **Removed docker-compose version warnings**: Eliminated obsolete version fields from all compose files
+
+### 🔧 S6 Overlay v3 Service Architecture
+
+- **Fixed duplicate branding**: Suppressed LinuxServer.io "CUSTOM BUILD" ASCII art
+  - Created empty `init-adduser/branding` file to override baseimage default
+  - Now only displays custom Mildman1848 branding
+- **Corrected S6 service structure**: Implemented LinuxServer.io two-file standard
+  - Renamed service `up` scripts → `run` scripts (executable, 755)
+  - Created new `up` files with path references (non-executable, 644)
+  - Applied to all oneshot services: init-branding, init-mods-package-install, init-custom-files, init-secrets, init-audiobookshelf-config
+- **Updated init-secrets/run**: Exports JWT_SECRET_KEY correctly for audiobookshelf v2.30.0
+
+### 📦 New Files
+
+- **.hadolint.yaml**: Dockerfile linting configuration for GitHub Actions
+- **package_versions.txt**: Complete dependency list (167 Alpine packages + 21 npm packages)
+- **root/defaults/config.json**: Default audiobookshelf configuration template
+- **root/etc/s6-overlay/s6-rc.d/*/run**: Executable S6 service scripts (LinuxServer.io standard)
+
+### 🐛 Bug Fixes
+
+- **JWT_SECRET_KEY not loading**: Fixed wrong ENV variable name (JWT_SECRET → JWT_SECRET_KEY)
+- **Duplicate container branding**: Suppressed LinuxServer.io default branding
+- **docker-compose version warnings**: Removed obsolete version fields (v2.x auto-detects format)
+- **S6 service execution**: Fixed oneshot services printing bash code instead of executing
+
+### 📊 Security Scan Results
+
+- **Total CVEs**: 2 HIGH (axios 0.27.2 - requires major version upgrade to 1.x)
+- **No CRITICAL vulnerabilities**: Clean scan on base image and most dependencies
+- **All scanners passing**: Trivy, Docker Scout, Hadolint, TruffleHog, Syft
+- **SARIF reports**: Uploaded to GitHub Security tab for tracking
+
+### 📝 Documentation Updates
+
+- **README.md**: Added vaultwarden-style professional badges
+  - GitHub Release, Docker Hub Pulls, Image Size, License
+  - CI Status, Security Scan, CodeQL, Upstream Version
+- **README.de.md**: Matching German badges
+- **.env.example**: Complete rewrite with 9 categorized sections
+  - Container Settings (PUID, PGID, TZ, UMASK)
+  - Filesystem Paths (CONFIG, METADATA, BACKUP, AUDIOBOOKS, PODCASTS)
+  - Network Configuration (HOST, PORT, EXTERNAL_PORT, proxy support)
+  - External Tools (FFMPEG_PATH, FFPROBE_PATH, TONE_PATH)
+  - Security & Authentication (JWT_SECRET_KEY, SESSION_SECRET, rate limiting)
+  - Application Settings (LOG_LEVEL, NODE_ENV, SCANNER_* settings)
+  - Docker Compose Settings (DOCKER_REPO, VERSION, BUILD_DATE)
+  - Secret Management (FILE__ prefix patterns)
+  - Advanced Configuration (Docker Mods)
+
+### ✅ Pre-Push Validation Completed
+
+- ✅ `make validate` - Passed with .hadolint.yaml configuration
+- ✅ `make build` - 518MB image created successfully
+- ✅ Container startup - Healthy status, 4+ hour uptime
+- ✅ Docker logs - JWT_SECRET_KEY loaded correctly from FILE__ prefix
+- ✅ `make status` - Healthy status confirmed
+- ✅ `make test` - All tests passed
+- ✅ Application functionality - HTTP 200 OK on port 13378
+- ✅ `make security-scan` - 2 HIGH CVEs (axios - documented)
+- ✅ `docker-compose config` - No warnings (version field removed)
+
+### 🏗️ Container Health Verification
+
+- **Status**: healthy
+- **JWT_SECRET_KEY**: ✓ Loaded from FILE__JWT_SECRET_KEY=/run/secrets/audiobookshelf_jwt_secret
+- **SESSION_SECRET**: ✓ Loaded from FILE__SESSION_SECRET=/run/secrets/audiobookshelf_session_secret
+- **TokenManager**: ✓ JWT secret key set from ENV variable (no auto-generation)
+- **All S6 services**: ✓ Running correctly with proper branding
+
+### 📦 Upstream Version
+
+- **audiobookshelf**: v2.30.0 (updated from v2.29.0)
+- **LinuxServer.io baseimage**: Alpine 3.22
+- **Node.js**: v22.16.0
+
 ## [2.29.0-5] - 2025-09-27
 
 ### 🔧 GitHub Actions Workflow Fixes
