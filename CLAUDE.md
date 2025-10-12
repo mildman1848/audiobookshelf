@@ -2031,6 +2031,47 @@ clean:
    - Generate changelog
    - Update version badges
 
+### Release Tag Convention
+
+**IMPORTANT: Release tags MUST match upstream application version exactly.**
+
+```bash
+# ✅ CORRECT - Matches upstream audiobookshelf release
+gh release create v2.30.0 --title "audiobookshelf v2.30.0"
+
+# ❌ INCORRECT - Do NOT add container-specific suffixes
+gh release create v2.30.0-1 --title "audiobookshelf v2.30.0-1"
+```
+
+**Rationale:**
+- Direct 1:1 mapping to upstream application version
+- Clear version identification for users
+- Consistent with upstream release tags
+- Simplifies version tracking and updates
+
+**If multiple container releases needed for same upstream version:**
+- Use pre-release flag: `gh release create v2.30.0 --prerelease`
+- Or use separate tags: `v2.30.0-rc1`, `v2.30.0-rc2` (for testing)
+- Or rebuild with same tag (GitHub allows tag updates)
+
+**Example workflow:**
+```bash
+# 1. Update VERSION file
+echo "2.30.0" > VERSION
+
+# 2. Update Dockerfile ARG
+sed -i 's/ARG AUDIOBOOKSHELF_VERSION=.*/ARG AUDIOBOOKSHELF_VERSION=2.30.0/' Dockerfile
+
+# 3. Commit changes
+git add VERSION Dockerfile
+git commit -m "⬆️ UPDATE: Bump audiobookshelf to v2.30.0"
+
+# 4. Create release with matching tag
+gh release create v2.30.0 \
+  --title "audiobookshelf v2.30.0" \
+  --notes "Container release for audiobookshelf v2.30.0"
+```
+
 ### Continuous Integration Checklist
 
 - [ ] Automated builds on push to main branch
