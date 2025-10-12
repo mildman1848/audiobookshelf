@@ -1,53 +1,14 @@
 # Hadolint Configuration for Audiobookshelf Docker Image
 # Documentation: https://github.com/hadolint/hadolint
 
-# Ignore specific rules
+# Ignore specific rules with justification
 ignored:
+  - DL3003  # cd instead of WORKDIR (needed for git operations)
   - DL3018  # Pin versions in apk add (LinuxServer.io manages versions)
   - DL3059  # Multiple consecutive RUN (multi-stage build structure)
   - DL4006  # Set pipefail (Alpine shell compatibility)
 
-# Trusted base images (bypass checks)
+# Trusted registries (bypass image checks)
 trustedRegistries:
   - docker.io
   - ghcr.io
-  - registry.hub.docker.com
-
-# Failure threshold (error, warning, info, style)
-failure-threshold: warning
-
-# Override specific rules with custom severity
-override:
-  error:
-    # Security-critical rules (always fail on these)
-    - DL3001  # Using sudo (security risk)
-    - DL3002  # Last USER should not be root
-    - DL3020  # COPY instead of ADD for local files
-    - DL3025  # JSON array format for CMD/ENTRYPOINT
-    - DL4001  # wget or curl should specify -o flag
-    - DL4005  # Use SHELL to change default shell
-
-  warning:
-    # Best practice violations (warn but don't fail)
-    - DL3003  # cd instead of WORKDIR
-    - DL3007  # Using latest tag
-    - DL3008  # Pin versions in apt-get
-    - DL3009  # apt-get clean after install
-    - DL3013  # Pin versions in pip
-    - DL3016  # Pin versions in npm
-    - DL3028  # Pin versions in gem
-
-  info:
-    # Style recommendations
-    - DL3006  # MAINTAINER is deprecated
-
-# Strict labels (OCI labels validation)
-strict-labels: true
-
-# Label schema (expected labels)
-label-schema:
-  author: deprecated  # Use org.opencontainers.image.authors instead
-  maintainer: any     # Allow maintainer field
-
-# Disable inline ignore comments
-disable-ignore-pragma: false
