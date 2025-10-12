@@ -1,105 +1,53 @@
-# Docker Compose file for Audiobookshelf
-# No version needed for modern Docker Compose
-
+---
 services:
   audiobookshelf:
-    image: ${IMAGE_NAME:-mildman1848/audiobookshelf}:${IMAGE_TAG:-latest}
-    container_name: audiobookshelf
-    hostname: audiobookshelf
-    restart: unless-stopped
-
-    # Security hardening (basic)
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - DAC_OVERRIDE
-      - FOWNER
-      - SETGID
-      - SETUID
-
-    # Network configuration
-    ports:
-      - "${HOST:-127.0.0.1}:${EXTERNAL_PORT:-13378}:80"
-
-    # Environment configuration
+    image: ${DOCKER_REPO:-mildman1848/audiobookshelf}:${VERSION:-latest}
+    container_name: ${CONTAINER_NAME:-audiobookshelf}
     environment:
-      # LinuxServer.io base variables
+      # LinuxServer.io Standard Variables
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - TZ=${TZ:-Etc/UTC}
+      - TZ=${TZ:-Europe/Berlin}
       - UMASK=${UMASK:-022}
 
-      # Audiobookshelf core configuration (SQLite3 as default)
-      - CONFIG_PATH=${CONFIG_PATH:-/config}
-      - METADATA_PATH=${METADATA_PATH:-/metadata}
-      - BACKUP_PATH=${BACKUP_PATH:-/config/backups}
-
-      # Application settings
-      - SOURCE=${SOURCE:-docker}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - NODE_ENV=${NODE_ENV:-production}
-
-      # Security configuration
-      - CORS_ENABLED=${CORS_ENABLED:-0}
-      - DISABLE_SSRF=${DISABLE_SSRF:-0}
-      - ALLOW_IFRAMES=${ALLOW_IFRAMES:-0}
-      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
-      - SESSION_COOKIE_HTTP_ONLY=${SESSION_COOKIE_HTTP_ONLY:-true}
-
-      # Binary paths
+      # Audiobookshelf Configuration
+      - PORT=${PORT:-80}
+      - HOST=${HOST:-0.0.0.0}
       - FFMPEG_PATH=${FFMPEG_PATH:-/usr/bin/ffmpeg}
       - FFPROBE_PATH=${FFPROBE_PATH:-/usr/bin/ffprobe}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
 
-      # Performance settings
-      - MAX_CONCURRENT_SCANS=${MAX_CONCURRENT_SCANS:-1}
-      - SCANNER_DISABLE_WATCHER=${SCANNER_DISABLE_WATCHER:-false}
-
-      # Feature flags
-      - ENABLE_EXPERIMENTAL_FEATURES=${ENABLE_EXPERIMENTAL_FEATURES:-false}
-      - ENABLE_FILE_WATCHER=${ENABLE_FILE_WATCHER:-true}
-      - SCANNER_FIND_COVERS=${SCANNER_FIND_COVERS:-true}
-
-      # Optional: FILE__ prefix secrets support
-      - FILE__JWT_SECRET=/run/secrets/audiobookshelf_jwt_secret
-
-    # Volume mounts
+      # Secrets using FILE__ prefix (LinuxServer.io standard)
+      # These point to files in /run/secrets/ directory
+      - FILE__JWT_SECRET_KEY=/run/secrets/audiobookshelf_jwt_secret
+      - FILE__SESSION_SECRET=/run/secrets/audiobookshelf_session_secret
     volumes:
+      # Testing: Try bind mount without security restrictions
       - ${CONFIG_PATH:-./config}:/config
-      - ${AUDIOBOOKS_PATH:-./data/audiobooks}:/audiobooks
-      - ${PODCASTS_PATH:-./data/podcasts}:/podcasts
-      - ${METADATA_PATH:-./data/metadata}:/metadata
-      - ${LOGS_PATH:-./logs}:/config/logs
-
-    # Optional: Docker secrets support
+      - ${DATA_PATH:-./data}:/data
+      - ${AUDIOBOOKS_PATH:-./data/audiobooks}:/data/audiobooks
+      - ${PODCASTS_PATH:-./data/podcasts}:/data/podcasts
     secrets:
       - audiobookshelf_jwt_secret
-
-    # Health check (process-based for security)
+      - audiobookshelf_session_secret
+    ports:
+      - "${HOST_BIND:-0.0.0.0}:${EXTERNAL_PORT:-13378}:${PORT:-80}"
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "sh", "-c", "ps aux | grep -v grep | grep audiobookshelf || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-80}/healthcheck"]
       interval: 30s
       timeout: 10s
+      start_period: 30s
       retries: 3
-      start_period: 40s
+    networks:
+      - audiobookshelf_network
 
-    # Labels for better organization
-    labels:
-      - "org.opencontainers.image.title=audiobookshelf"
-      - "org.opencontainers.image.description=Audiobookshelf - Self-hosted audiobook and podcast server with S6 Overlay"
-      - "org.opencontainers.image.vendor=Mildman1848"
+networks:
+  audiobookshelf_network:
+    driver: bridge
 
-# Docker secrets (optional)
 secrets:
   audiobookshelf_jwt_secret:
-    file: ${SECRETS_PATH:-./secrets}/audiobookshelf_jwt_secret.txt
-
-# Networks (optional)
-networks:
-  default:
-    name: ${NETWORK_NAME:-audiobookshelf_network}
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: ${NETWORK_SUBNET:-172.20.0.0/16}
+    file: ./secrets/audiobookshelf_jwt_secret.txt
+  audiobookshelf_session_secret:
+    file: ./secrets/audiobookshelf_session_secret.txt

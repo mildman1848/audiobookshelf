@@ -1,0 +1,14 @@
+#!/usr/bin/with-contenv /bin/bash
+# shellcheck shell=bash
+
+echo "Docker Mods check (LinuxServer.io compatibility)..."
+
+# LinuxServer.io Docker Mods support - simplified version
+if [[ -n "${DOCKER_MODS}" ]]; then
+    echo "DOCKER_MODS detected: ${DOCKER_MODS}"
+    echo "Note: Full Docker Mods support requires LinuxServer.io mod infrastructure"
+else
+    echo "No DOCKER_MODS defined - skipping"
+fi
+
+echo "✓ Docker Mods check completed"

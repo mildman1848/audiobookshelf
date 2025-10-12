@@ -1,138 +1,59 @@
 ---
-# Production configuration with maximum security for Audiobookshelf
-# Use: docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
+# Production-ready docker-compose configuration with maximum security
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
 
 services:
   audiobookshelf:
-    # Production-grade security (extends base security_opt)
-    security_opt:
-      - apparmor=docker-default
-      - seccomp=./security/seccomp-profile.json
-
-    # Localhost-only binding for maximum security
+    # Bind to localhost only (requires reverse proxy)
     ports:
-      - "127.0.0.1:${EXTERNAL_PORT:-13378}:${PORT:-80}"
+      - "127.0.0.1:8080:8080"
 
-    # Production resource limits
+    # Read-only root filesystem
+    read_only: true
+
+    # Temporary filesystems with strict permissions
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=50M,mode=1777
+      - /var/tmp:rw,noexec,nosuid,size=50M,mode=1777
+      - /run:rw,noexec,nosuid,size=10M,mode=755
+
+    # Maximum security options
+    security_opt:
+      - no-new-privileges:true
+      - apparmor=docker-default
+
+    # Drop all capabilities
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+
+    # Strict resource limits
     deploy:
       resources:
         limits:
           cpus: '2.0'
           memory: 1G
           pids: 200
-        reservations:
-          cpus: '0.5'
-          memory: 256M
 
-    # Audiobookshelf-specific volume configurations for production
-    volumes:
-      - ${HOST_CONFIG_PATH:-./config}:/config:rw,Z           # Config needs to be writable
-      - ${HOST_AUDIOBOOKS_PATH:-./data/audiobooks}:/audiobooks:ro,Z # Read-only audiobooks
-      - ${HOST_PODCASTS_PATH:-./data/podcasts}:/podcasts:rw,Z     # Podcasts may need write access
-      - ${HOST_METADATA_PATH:-./data/metadata}:/metadata:rw,Z     # Metadata needs write access
-
-    # Production logging with structured format
+    # Structured logging with rotation
     logging:
       driver: "json-file"
       options:
-        max-size: "50m"
-        max-file: "5"
-        labels: "service=audiobookshelf,environment=production"
+        max-size: "10m"
+        max-file: "3"
+        labels: "production"
 
-    # Production environment variables
-    environment:
-      # Security
-      - LOG_LEVEL=INFO              # Production log level
-      - DEBUG_MODE=false            # Disable debug
-      - AUDIT_ENABLED=true          # Enable audit logging
+    # Always restart in production
+    restart: always
 
-      # Audiobookshelf production settings
-      - AUDIOBOOKSHELF_WORKERS=2          # Production worker count
-      - AUDIOBOOKSHELF_CACHE_ENABLED=true # Enable caching
-      - MAX_SESSIONS=${MAX_SESSIONS:-20}   # Limit concurrent sessions
+    # Internal network only
+    networks:
+      - internal
 
-      # Security hardening
-      - UMASK=027                   # Restrictive permissions (750 dirs, 640 files)
-      - CORE_DUMP_SIZE=0           # Disable core dumps
-      - TMPDIR=/tmp                # Secure temp directory
-
-      # Force localhost binding in production
-      - HOST_BIND=127.0.0.1
-
-    # Note: tmpfs mounts are inherited from base docker-compose.yml
-    # Base tmpfs: /tmp (basic configuration)
-    # Production adds enhanced security via other mechanisms
-
-    # Production health check (process-based and more frequent)
-    healthcheck:
-      test: ["CMD", "sh", "-c", "ps aux | grep -v grep | grep audiobookshelf || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
-
-    # Production labels
-    labels:
-      - "org.opencontainers.image.title=audiobookshelf"
-      - "org.opencontainers.image.description=Audiobookshelf server with production security"
-      - "org.opencontainers.image.vendor=Mildman1848"
-      - "environment=production"
-      - "security.level=high"
-      - "backup.required=true"
-
-  # Example with external database for production (uncomment if needed)
-  # audiobookshelf-with-db:
-  #   extends:
-  #     service: audiobookshelf
-  #   environment:
-  #     - DATABASE_TYPE=postgres
-  #     - DATABASE_HOST=audiobookshelf-postgres
-  #     - DATABASE_PORT=5432
-  #     - DATABASE_NAME=audiobookshelf
-  #   depends_on:
-  #     - audiobookshelf-postgres
-
-  # audiobookshelf-postgres:
-  #   image: postgres:16-alpine
-  #   container_name: audiobookshelf-postgres
-  #   restart: unless-stopped
-  #   security_opt:
-  #     - no-new-privileges:true
-  #   volumes:
-  #     - ${HOST_DB_PATH:-./db}:/var/lib/postgresql/data:rw,Z
-  #   environment:
-  #     - POSTGRES_DB=audiobookshelf
-  #     - POSTGRES_USER_FILE=/run/secrets/audiobookshelf_db_user
-  #     - POSTGRES_PASSWORD_FILE=/run/secrets/audiobookshelf_db_password
-  #   secrets:
-  #     - audiobookshelf_db_user
-  #     - audiobookshelf_db_password
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-
-# Production network with custom settings (inherits base subnet)
 networks:
-  default:
-    name: audiobookshelf_production_network
+  internal:
     driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.21.0.0/16  # Different subnet to avoid conflicts
-    driver_opts:
-      com.docker.network.bridge.enable_icc: "false"
-      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
-
-# Production secrets management
-secrets:
-  audiobookshelf_jwt_secret:
-    file: ${SECRETS_PATH:-./secrets}/audiobookshelf_jwt_secret.txt
-  audiobookshelf_api_key:
-    file: ${SECRETS_PATH:-./secrets}/audiobookshelf_api_key.txt
-  # audiobookshelf_db_user:
-  #   file: ${SECRETS_PATH:-./secrets}/audiobookshelf_db_user.txt
-  # audiobookshelf_db_password:
-  #   file: ${SECRETS_PATH:-./secrets}/audiobookshelf_db_password.txt
+    internal: false

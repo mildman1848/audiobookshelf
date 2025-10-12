@@ -1,16 +1,20 @@
-# Audiobookshelf Docker Image
+# Audiobookshelf - LinuxServer.io Edition
 
 > 🇩🇪 **Deutsche Version** | 📖 **[English Version](README.md)**
 
-![Build Status](https://github.com/mildman1848/audiobookshelf/workflows/CI/badge.svg)
-![Docker Pulls](https://img.shields.io/docker/pulls/mildman1848/audiobookshelf)
-![Docker Image Size](https://img.shields.io/docker/image-size/mildman1848/audiobookshelf/latest)
-![License](https://img.shields.io/github/license/mildman1848/audiobookshelf)
-![Version](https://img.shields.io/badge/version-2.29.0-blue)
+[![GitHub Release](https://img.shields.io/github/v/release/mildman1848/audiobookshelf?style=for-the-badge&logo=github&color=005AA4)](https://github.com/mildman1848/audiobookshelf/releases)
+[![Docker Hub Pulls](https://img.shields.io/docker/pulls/mildman1848/audiobookshelf?style=for-the-badge&logo=docker&logoColor=fff&color=005AA4)](https://hub.docker.com/r/mildman1848/audiobookshelf)
+[![Docker Image Size](https://img.shields.io/docker/image-size/mildman1848/audiobookshelf/latest?style=for-the-badge&logo=docker&logoColor=fff&color=005AA4)](https://hub.docker.com/r/mildman1848/audiobookshelf)
+[![License](https://img.shields.io/github/license/mildman1848/audiobookshelf?style=for-the-badge&color=005AA4)](https://github.com/mildman1848/audiobookshelf/blob/main/LICENSE)
 
-🐳 **[Docker Hub: mildman1848/audiobookshelf](https://hub.docker.com/r/mildman1848/audiobookshelf)**
+[![CI Status](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/ci.yml?branch=main&style=flat-square&logo=github&label=CI)](https://github.com/mildman1848/audiobookshelf/actions/workflows/ci.yml)
+[![Security Scan](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/security.yml?branch=main&style=flat-square&logo=security&label=Security)](https://github.com/mildman1848/audiobookshelf/actions/workflows/security.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/codeql.yml?branch=main&style=flat-square&logo=github&label=CodeQL)](https://github.com/mildman1848/audiobookshelf/actions/workflows/codeql.yml)
+[![Upstream Version](https://img.shields.io/badge/audiobookshelf-v2.30.0-blue?style=flat-square&logo=github)](https://github.com/advplyr/audiobookshelf/releases/tag/v2.30.0)
 
-Ein production-ready Docker-Image für [Audiobookshelf](https://www.audiobookshelf.org/) basierend auf dem LinuxServer.io Alpine Baseimage mit erweiterten Security-Features, automatischer Secret-Verwaltung, vollständiger LinuxServer.io Compliance und CI/CD-Integration.
+---
+
+**Production-ready Docker-Image für [Audiobookshelf](https://www.audiobookshelf.org/) basierend auf dem LinuxServer.io Alpine Baseimage mit erweiterten Security-Features, automatischer Secret-Verwaltung, vollständiger LinuxServer.io Compliance und CI/CD-Integration.**
 
 ## 🚀 Features
 
@@ -78,6 +82,8 @@ docker run -d \
   --restart unless-stopped \
   mildman1848/audiobookshelf:latest
 ```
+
+## 🪟 Windows Docker Desktop Kompatibilität**✅ FUNKTIONIERT**: Bind-Mounts werden vollständig unter Windows Docker Desktop unterstützt!Die vorherigen EPERM-Fehler wurden durch strikte Security-Optionen verursacht, nicht durch Bind-Mounts selbst. Die Lösung:- ✅ **Bind-Mount für `/config`** - Config-Verzeichnis ist auf dem Host zugänglich- ✅ **Migrations vorkopiert** - In `/defaults/migrations` gespeichert und beim Start kopiert- ✅ **Security-Optionen angepasst** - `no-new-privileges` und Capability-Einschränkungen für Windows-Kompatibilität deaktiviert**Für Linux-Produktiv-Systeme**: Sie können Security-Hardening durch Auskommentieren der Optionen in `docker-compose.override.yml` wieder aktivieren.
 
 ## 🛠️ Build & Development
 
@@ -531,7 +537,7 @@ docker exec -it audiobookshelf /bin/bash
 
 1. **Fork & Clone**
    ```bash
-   git clone https://github.com/yourusername/audiobookshelf.git
+   git clone https://github.com/mildman1848/audiobookshelf.git
    cd audiobookshelf
    ```
 

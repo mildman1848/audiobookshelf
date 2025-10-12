@@ -1,0 +1,45 @@
+#!/usr/bin/with-contenv /bin/bash
+# shellcheck shell=bash
+
+echo "Initializing audiobookshelf configuration..."
+
+# Apply UMASK for file creation (LinuxServer.io standard)
+UMASK=${UMASK:-022}
+umask "$UMASK"
+echo "Applied UMASK: $UMASK"
+
+# Create necessary directories
+echo "Creating directory structure..."
+mkdir -p /config /config/metadata /config/backups /config/migrations /data/audiobooks /data/podcasts
+
+# Copy default migrations if /config/migrations is empty (first run)
+if [[ -d /defaults/migrations ]] && [[ ! -f /config/migrations/readme.md ]]; then
+    echo "Copying default migrations to /config/migrations..."
+    cp -r /defaults/migrations/* /config/migrations/
+    echo "✓ Default migrations copied to /config/migrations"
+fi
+
+# Apply LinuxServer.io standard ownership using lsiown (cross-platform compatible)
+echo "Setting ownership and permissions..."
+lsiown -R abc:abc /config /data 2>/dev/null || true
+
+# Set permissions
+find /config -type d -exec chmod 770 {} \; 2>/dev/null || true
+find /config -type f -exec chmod 660 {} \; 2>/dev/null || true
+find /data -type d -exec chmod 755 {} \; 2>/dev/null || true
+
+# Copy default configuration if none exists
+if [[ ! -f /config/config.json ]] && [[ -f /defaults/config.json ]]; then
+    echo "Copying default configuration..."
+    cp /defaults/config.json /config/config.json
+    lsiown abc:abc /config/config.json 2>/dev/null || true
+    chmod 660 /config/config.json 2>/dev/null || true
+fi
+
+# Display configuration
+echo "✓ Audiobookshelf configuration initialized successfully."
+echo "  Config Path: /config"
+echo "  Metadata Path: /config/metadata"
+echo "  Migrations: /config/migrations (pre-copied)"
+echo "  Audiobooks: /data/audiobooks"
+echo "  Podcasts: /data/podcasts"

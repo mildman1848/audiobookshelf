@@ -130,41 +130,49 @@ jobs:
           sarif_file: hadolint-results.sarif
           category: 'hadolint-dockerfile'
 
-  dependency-scan:
-    name: Dependency Vulnerability Scan
+  docker-scout-scan:
+    name: Docker Scout CVE Scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/docker@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image for Docker Scout
+        uses: docker/build-push-action@v6
         with:
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:scan
-          args: --severity-threshold=high --sarif-file-output=snyk-results.sarif
+          context: .
+          load: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:scout
+          cache-from: type=gha
 
-      - name: Check if Snyk generated SARIF file
-        id: snyk-sarif-check
-        if: always()
-        run: |
-          if [ -f snyk-results.sarif ] && [ -s snyk-results.sarif ]; then
-            echo "sarif_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "sarif_exists=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Docker Scout CVE Scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:scout
+          only-severities: critical,high
+          exit-code: false
+          sarif-file: scout-results.sarif
 
-      - name: Upload Snyk results to GitHub Security tab
+      - name: Upload Docker Scout SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: steps.snyk-sarif-check.outputs.sarif_exists == 'true'
+        if: always()
         with:
-          sarif_file: snyk-results.sarif
-          category: 'snyk-dependencies'
+          sarif_file: scout-results.sarif
+          category: 'docker-scout'
+
+      - name: Docker Scout Recommendations
+        uses: docker/scout-action@v1
+        with:
+          command: recommendations
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:scout
 
   # Optional: SBOM generation for dependency analysis
   sbom-scan:
@@ -206,7 +214,7 @@ jobs:
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [trivy-scan, secret-scan, dockerfile-scan, sbom-scan]
+    needs: [trivy-scan, secret-scan, dockerfile-scan, docker-scout-scan, sbom-scan]
     if: always()
     steps:
       - name: Security scan summary
@@ -216,6 +224,7 @@ jobs:
           echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|---------|" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy Vulnerability | ${{ needs.trivy-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Scout CVE | ${{ needs.docker-scout-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Secret Scan | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Dockerfile Security | ${{ needs.dockerfile-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| SBOM Generation | ${{ needs.sbom-scan.result }} |" >> $GITHUB_STEP_SUMMARY

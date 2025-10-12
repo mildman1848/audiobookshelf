@@ -71,6 +71,7 @@ sbom*.json
 *.spdx.json
 trivy-results.*
 dockerfile-scan.*
+hadolint-results.txt
 
 # Container runtime logs
 *.container.log
@@ -120,3 +121,5 @@ cve-*.json
 BASEIMAGE_UPDATE_REPORT.md
 baseimage-test-*.log
 baseimage-test-*.json
+
+PRE-PUSH-CHECKLIST-UPDATED.md

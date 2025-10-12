@@ -1,88 +1,39 @@
-# docker-compose.override.yml
-# PostgreSQL Database Extension for Audiobookshelf
+---
+# This file provides additional configuration for production/development
+# Automatically loaded by docker-compose
 #
-# This file adds PostgreSQL support to the base docker-compose.yml
-# To use PostgreSQL instead of SQLite3:
-# 1. Run: make secrets-generate
-# 2. Start with: docker compose up -d
-#
-# Docker Compose automatically applies override files when present.
+# ⚠️ IMPORTANT: Windows Docker Desktop Compatibility
+# Strict security options (no-new-privileges, cap_drop) cause EPERM errors
+# with bind mounts on Windows. These are disabled for cross-platform compatibility.
 
 services:
   audiobookshelf:
-    # Add PostgreSQL environment configuration
-    environment:
-      # Database configuration (PostgreSQL)
-      - DB_TYPE=postgres
-      - DB_HOST=${DB_HOST:-db_audiobookshelf}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_NAME=${DB_NAME:-audiobookshelf}
+    # Resource limits (recommended for production)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+          pids: 200
 
-      # PostgreSQL secrets support
-      - FILE__DB_PASSWORD=/run/secrets/audiobookshelf_db_password
-      - FILE__DB_USER=/run/secrets/audiobookshelf_db_user
+    # Temporary filesystems for performance
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100M
+      - /var/tmp:rw,noexec,nosuid,size=50M
 
-    # Add PostgreSQL secrets
-    secrets:
-      - audiobookshelf_jwt_secret
-      - audiobookshelf_db_password
-      - audiobookshelf_db_user
-
-    # Add PostgreSQL dependency
-    depends_on:
-      db_audiobookshelf:
-        condition: service_healthy
-
-  # PostgreSQL Database service
-  db_audiobookshelf:
-    image: postgres:16-alpine
-    container_name: audiobookshelf_db
-    hostname: db_audiobookshelf
-    restart: unless-stopped
-
-    # Security hardening
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - DAC_OVERRIDE
-      - FOWNER
-      - SETGID
-      - SETUID
-
-    environment:
-      - POSTGRES_DB=${DB_NAME:-audiobookshelf}
-      # PostgreSQL secrets support (uses _FILE suffix exclusively)
-      # Note: Cannot use both POSTGRES_PASSWORD and POSTGRES_PASSWORD_FILE
-      - POSTGRES_PASSWORD_FILE=/run/secrets/audiobookshelf_db_password
-      - POSTGRES_USER_FILE=/run/secrets/audiobookshelf_db_user
-
-    volumes:
-      - ${DB_DATA_PATH:-./data/db}:/var/lib/postgresql/data
-
-    # Docker secrets support for PostgreSQL
-    secrets:
-      - audiobookshelf_db_password
-      - audiobookshelf_db_user
-
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d audiobookshelf -U $(cat /run/secrets/audiobookshelf_db_user)"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-    # Labels for better organization
-    labels:
-      - "org.opencontainers.image.title=audiobookshelf-db"
-      - "org.opencontainers.image.description=PostgreSQL database for Audiobookshelf"
-      - "org.opencontainers.image.vendor=Mildman1848"
-
-# PostgreSQL secrets (extend base secrets)
-secrets:
-  audiobookshelf_jwt_secret:
-    file: ${SECRETS_PATH:-./secrets}/audiobookshelf_jwt_secret.txt
-  audiobookshelf_db_password:
-    file: ${SECRETS_PATH:-./secrets}/audiobookshelf_db_password.txt
-  audiobookshelf_db_user:
-    file: ${SECRETS_PATH:-./secrets}/audiobookshelf_db_user.txt
+    # ⚠️ SECURITY OPTIONS DISABLED FOR WINDOWS COMPATIBILITY
+    #
+    # On Linux production systems with bind mounts working properly,
+    # you may enable these security options:
+    #
+    # security_opt:
+    #   - no-new-privileges:true
+    #   - apparmor=docker-default
+    #
+    # cap_drop:
+    #   - ALL
+    # cap_add:
+    #   - CHOWN       # File ownership changes
+    #   - SETUID      # User switching (LinuxServer.io)
+    #   - SETGID      # Group switching (LinuxServer.io)
+    #   - DAC_OVERRIDE  # File access

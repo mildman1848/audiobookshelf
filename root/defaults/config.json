@@ -1,0 +1,8 @@
+{
+  "port": 80,
+  "host": "0.0.0.0",
+  "ConfigPath": "/config",
+  "MetadataPath": "/config/metadata",
+  "ffmpegPath": "/usr/bin/ffmpeg",
+  "ffprobePath": "/usr/bin/ffprobe"
+}

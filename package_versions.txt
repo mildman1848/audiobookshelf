@@ -1,0 +1,199 @@
+# Package Versions - audiobookshelf v2.30.0
+# Generated: 2025-10-11
+# Base Image: LinuxServer.io Alpine 3.22
+
+=== Alpine Linux Packages (apk) ===
+acl-libs-2.3.2-r1
+ada-libs-2.9.2-r4
+alpine-baselayout-3.7.0-r0
+alpine-baselayout-data-3.7.0-r0
+alpine-keys-2.5-r0
+alpine-release-3.22.1-r0
+alsa-lib-1.2.14-r0
+aom-libs-3.12.1-r0
+apk-tools-2.14.9-r3
+bash-5.2.37-r0
+brotli-libs-1.1.0-r2
+busybox-1.37.0-r19
+busybox-binsh-1.37.0-r19
+c-ares-1.34.5-r0
+ca-certificates-20250911-r0
+ca-certificates-bundle-20250911-r0
+catatonit-0.2.1-r0
+cjson-1.7.18-r1
+coreutils-9.7-r1
+coreutils-env-9.7-r1
+coreutils-fmt-9.7-r1
+coreutils-sha512sum-9.7-r1
+curl-8.14.1-r2
+dbus-libs-1.16.2-r1
+ffmpeg-6.1.2-r2
+ffmpeg-libavcodec-6.1.2-r2
+ffmpeg-libavdevice-6.1.2-r2
+ffmpeg-libavfilter-6.1.2-r2
+ffmpeg-libavformat-6.1.2-r2
+ffmpeg-libavutil-6.1.2-r2
+ffmpeg-libpostproc-6.1.2-r2
+ffmpeg-libswresample-6.1.2-r2
+ffmpeg-libswscale-6.1.2-r2
+findutils-4.10.0-r0
+fontconfig-2.15.0-r3
+freetype-2.13.3-r0
+fribidi-1.0.16-r1
+giflib-5.2.2-r1
+glib-2.84.4-r0
+glslang-libs-1.4.309.0-r0
+graphite2-1.3.14-r6
+harfbuzz-11.2.1-r0
+hwdata-pci-0.395-r0
+icu-data-en-76.1-r1
+icu-libs-76.1-r1
+imath-3.1.12-r0
+jq-1.8.0-r0
+lame-libs-3.100-r5
+lcms2-2.16-r0
+libapk2-2.14.9-r3
+libass-0.17.3-r0
+libasyncns-0.8-r4
+libattr-2.5.2-r2
+libblkid-2.41-r9
+libbluray-1.3.4-r1
+libbsd-0.12.2-r0
+libbz2-1.0.8-r6
+libcrypto3-3.5.4-r0
+libcurl-8.14.1-r2
+libdav1d-1.5.1-r0
+libdeflate-1.23-r0
+libdovi-3.3.1-r1
+libdrm-2.4.124-r0
+libeconf-0.6.3-r0
+libexpat-2.7.3-r0
+libffi-3.4.8-r0
+libflac-1.4.3-r1
+libgcc-14.2.0-r6
+libgomp-14.2.0-r6
+libhwy-1.0.7-r1
+libidn2-2.3.7-r0
+libintl-0.24.1-r0
+libjpeg-turbo-3.1.0-r0
+libjxl-0.10.3-r2
+libltdl-2.5.4-r1
+libmd-1.1.0-r0
+libmount-2.41-r9
+libncursesw-6.5_p20250503-r0
+libogg-1.3.5-r5
+libopenmpt-0.7.15-r0
+libpciaccess-0.18.1-r0
+libplacebo-6.338.2-r3
+libpng-1.6.47-r0
+libproc2-4.0.4-r3
+libpsl-0.21.5-r3
+libpulse-17.0-r5
+librist-0.2.10-r1
+libsharpyuv-1.5.0-r0
+libsndfile-1.2.2-r2
+libsodium-1.0.20-r0
+libsrt-1.5.3-r1
+libssh-0.11.2-r0
+libssl3-3.5.4-r0
+libstdc++-14.2.0-r6
+libSvtAv1Enc-2.3.0-r0
+libtheora-1.1.1-r18
+libunibreak-6.1-r0
+libunistring-1.3-r0
+libva-2.22.0-r1
+libvdpau-1.5-r4
+libvorbis-1.3.7-r2
+libvpx-1.15.0-r0
+libwebp-1.5.0-r0
+libwebpmux-1.5.0-r0
+libx11-1.8.11-r0
+libxau-1.0.12-r0
+libxcb-1.17.0-r0
+libxdmcp-1.1.5-r1
+libxext-1.3.6-r2
+libxfixes-6.0.1-r4
+libxml2-2.13.9-r0
+libzmq-4.3.5-r2
+lilv-libs-0.24.26-r0
+linux-pam-1.7.0-r4
+mbedtls-3.6.4-r0
+mpg123-libs-1.32.10-r0
+musl-1.2.5-r10
+musl-utils-1.2.5-r10
+ncurses-terminfo-base-6.5_p20250503-r0
+netcat-openbsd-1.229.1-r0
+nghttp2-libs-1.65.0-r0
+nodejs-22.16.0-r2
+npm-11.3.0-r1
+numactl-2.0.18-r0
+onevpl-libs-2023.3.1-r2
+oniguruma-6.9.10-r0
+openexr-libiex-3.3.2-r0
+openexr-libilmthread-3.3.2-r0
+openexr-libopenexr-3.3.2-r0
+openexr-libopenexrcore-3.3.2-r0
+opus-1.5.2-r1
+orc-0.4.40-r1
+pcre2-10.43-r1
+procps-ng-4.0.4-r3
+rav1e-libs-0.7.1-r2
+readline-8.2.13-r1
+scanelf-1.3.8-r1
+sdl2-compat-2.32.56-r0
+sdl3-3.2.16-r0
+serd-libs-0.32.4-r0
+shaderc-2024.4-r0
+shadow-4.17.3-r0
+simdjson-3.12.0-r0
+simdutf-7.2.1-r0
+skalibs-libs-2.14.4.0-r0
+sord-libs-0.16.18-r0
+soxr-0.1.3-r7
+speexdsp-1.2.1-r2
+spirv-tools-1.4.313.0-r0
+sqlite-libs-3.49.2-r1
+sratom-0.6.18-r0
+ssl_client-1.37.0-r19
+tdb-libs-1.4.12-r0
+tzdata-2025b-r0
+utmps-libs-0.1.3.1-r0
+v4l-utils-libs-1.28.1-r1
+vidstab-1.1.1-r0
+vulkan-loader-1.4.313.0-r0
+wayland-libs-client-1.23.1-r3
+x264-libs-0.164.3108-r0
+x265-libs-3.6-r0
+xvidcore-1.3.7-r2
+xz-libs-5.8.1-r0
+zimg-3.0.5-r3
+zix-libs-0.6.2-r0
+zlib-1.3.1-r2
+zstd-libs-1.5.7-r0
+
+=== Node.js Application Packages (npm) ===
+audiobookshelf@2.30.0 /app
++-- axios@0.27.2
++-- cookie-parser@1.4.7
++-- express-rate-limit@7.5.1
++-- express-session@1.18.2
++-- express@4.21.2
++-- graceful-fs@4.2.10
++-- htmlparser2@8.0.1
++-- lru-cache@10.0.3
++-- node-unrar-js@2.0.2
++-- nodemailer@6.10.1
++-- openid-client@5.6.1
++-- p-throttle@4.1.1
++-- passport-jwt@4.0.1
++-- passport@0.6.0
++-- semver@7.6.3
++-- sequelize@6.35.2
++-- socket.io@4.8.1
++-- sqlite3@5.1.7
++-- ssrf-req-filter@1.1.0
+`-- xml2js@0.5.0
+
+
+Total Alpine packages: 167
+Total npm packages: 21

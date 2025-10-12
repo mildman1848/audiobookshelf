@@ -1,198 +1,147 @@
 # syntax=docker/dockerfile:1
+# Audiobookshelf - Self-hosted audiobook and podcast server
+# Based on LinuxServer.io Alpine Baseimage with official audiobookshelf build process
 
-# Use official audiobookshelf image as base
-FROM advplyr/audiobookshelf:2.29.0 AS audiobookshelf-base
-
-# Build our custom image based on LinuxServer.io
-FROM ghcr.io/linuxserver/baseimage-alpine:3.22-a0dc0735-ls11
-
-# Set version and security labels
+# Build arguments
+ARG ALPINE_VERSION=3.22
+ARG AUDIOBOOKSHELF_VERSION=2.30.0
 ARG BUILD_DATE
 ARG VERSION
-ARG VCS_REF
-ARG AUDIOBOOKSHELF_VERSION=v2.29.0
-ARG PROJECT_VERSION=2.29.0-automation.2
+ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
+ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
-# Security: OCI-compliant labels
-LABEL org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.source="https://github.com/mildman1848/audiobookshelf" \
-      org.opencontainers.image.title="Audiobookshelf (Mildman1848 Build)" \
-      org.opencontainers.image.description="Self-hosted audiobook and podcast server based on LinuxServer.io Alpine with enhanced security and Docker Secrets support" \
-      org.opencontainers.image.vendor="mildman1848" \
-      org.opencontainers.image.licenses="GPL-3.0" \
-      org.opencontainers.image.authors="mildman1848" \
-      org.opencontainers.image.url="https://github.com/mildman1848/audiobookshelf" \
-      org.opencontainers.image.documentation="https://github.com/mildman1848/audiobookshelf/blob/main/README.md" \
-      io.mildman1848.audiobookshelf.version="${AUDIOBOOKSHELF_VERSION}" \
-      io.mildman1848.project.version="${PROJECT_VERSION}" \
-      io.mildman1848.branding="custom" \
-      io.linuxserver.baseimage="ghcr.io/linuxserver/baseimage-alpine:3.22-02acf855-ls10" \
-      io.linuxserver.s6-overlay="v3"
+### STAGE 0: Build client (from official Dockerfile) ###
+FROM node:20-alpine AS build-client
 
-# LinuxServer.io standard environment variables
-ENV HOME="/config" \
-    XDG_CONFIG_HOME="/config" \
-    PUID=99 \
-    PGID=100 \
-    AUDIOBOOKSHELF_UID=911 \
-    AUDIOBOOKSHELF_GID=911 \
-    LSIO_FIRST_PARTY=false \
-    VERSION=${VERSION:-latest} \
-    BUILD_DATE=${BUILD_DATE:-unknown} \
-    AUDIOBOOKSHELF_VERSION=${AUDIOBOOKSHELF_VERSION:-v2.29.0}
+ARG AUDIOBOOKSHELF_VERSION
 
-# Set shell for proper error handling and security
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+WORKDIR /client
+RUN apk add --no-cache git && \
+    git clone --depth 1 --branch v${AUDIOBOOKSHELF_VERSION} https://github.com/advplyr/audiobookshelf.git /tmp/audiobookshelf && \
+    cp -r /tmp/audiobookshelf/client/* /client/ && \
+    rm -rf /tmp/audiobookshelf
 
-# hadolint ignore=DL3018
-RUN \
-  echo "**** install runtime packages ****" && \
-  apk add --no-cache \
+RUN npm ci && npm cache clean --force
+RUN npm run generate
+
+### STAGE 1: Build server (from official Dockerfile) ###
+FROM node:20-alpine AS build-server
+
+ARG AUDIOBOOKSHELF_VERSION
+ARG NUSQLITE3_DIR
+ARG TARGETPLATFORM
+
+ENV NODE_ENV=production
+
+RUN apk add --no-cache --update \
     curl \
-    nodejs \
-    npm \
-    ffmpeg \
-    shadow \
-    su-exec && \
-  echo "**** security: ensure abc user follows LinuxServer.io standards ****" && \
-  groupmod -g 911 abc && \
-  usermod -u 911 -d /config abc && \
-  echo "**** create secure directory structure ****" && \
-  mkdir -p \
-    /app \
-    /config \
-    /defaults && \
-  chmod 755 /app && \
-  chmod 750 /config /defaults && \
-  echo "**** cleanup ****" && \
-  rm -rf \
-    /tmp/* \
-    /var/cache/apk/*
+    make \
+    python3 \
+    g++ \
+    git \
+    unzip
 
-# Copy audiobookshelf from official image with proper ownership
-COPY --from=audiobookshelf-base --chown=abc:abc /app /app/
-RUN chmod -R 755 /app && \
-    test -f /app/index.js && \
-    echo "✓ Audiobookshelf copied successfully"
+WORKDIR /server
+RUN git clone --depth 1 --branch v${AUDIOBOOKSHELF_VERSION} https://github.com/advplyr/audiobookshelf.git /tmp/audiobookshelf && \
+    cp /tmp/audiobookshelf/index.js /tmp/audiobookshelf/package*.json /server/ && \
+    cp -r /tmp/audiobookshelf/server /server/server && \
+    rm -rf /tmp/audiobookshelf
 
-# Security: Update vulnerable npm packages
-WORKDIR /app
+# Download platform-specific SQLite library
+RUN case "$TARGETPLATFORM" in \
+    "linux/amd64") \
+        curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.2/libnusqlite3-linux-musl-x64.zip" ;; \
+    "linux/arm64") \
+        curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.2/libnusqlite3-linux-musl-arm64.zip" ;; \
+    *) curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.2/libnusqlite3-linux-musl-x64.zip" ;; \
+    esac && \
+    mkdir -p $NUSQLITE3_DIR && \
+    unzip /tmp/library.zip -d $NUSQLITE3_DIR && \
+    rm /tmp/library.zip
+
+RUN npm ci --only=production
+
+# Security: Attempt to fix vulnerable npm packages with audit
+# Note: Some vulnerabilities may require upstream audiobookshelf updates
+# Addresses CVE-2025-7783 (form-data), CVE-2025-59343 (tar-fs), CVE-2024-37890 (ws), etc.
+RUN npm audit fix --only=prod || true && \
+    npm cache clean --force
+
+### STAGE 2: Runtime with LinuxServer.io baseimage ###
+FROM ghcr.io/linuxserver/baseimage-alpine:${ALPINE_VERSION}
+
+ARG AUDIOBOOKSHELF_VERSION
+ARG BUILD_DATE
+ARG VERSION
+ARG NUSQLITE3_DIR
+ARG NUSQLITE3_PATH
+
+# Metadata
+LABEL build_version="mildman1848 version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL maintainer="mildman1848"
+LABEL org.opencontainers.image.title="Audiobookshelf"
+LABEL org.opencontainers.image.description="Self-hosted audiobook and podcast server based on LinuxServer.io Alpine"
+LABEL org.opencontainers.image.version="${AUDIOBOOKSHELF_VERSION}"
+LABEL org.opencontainers.image.url="https://github.com/mildman1848/audiobookshelf"
+LABEL org.opencontainers.image.source="https://github.com/mildman1848/audiobookshelf"
+LABEL org.opencontainers.image.documentation="https://github.com/mildman1848/audiobookshelf/blob/main/README.md"
+LABEL org.opencontainers.image.licenses="GPL-3.0"
+LABEL org.opencontainers.image.base.name="ghcr.io/linuxserver/baseimage-alpine:${ALPINE_VERSION}"
+
+# Install runtime dependencies
+RUN echo "**** install runtime packages ****" && \
+    apk add --no-cache \
+        bash \
+        curl \
+        nodejs \
+        npm \
+        tzdata \
+        ffmpeg && \
+    echo "**** cleanup ****" && \
+    rm -rf \
+        /tmp/* \
+        /var/cache/apk/*
+
+# Copy compiled frontend and server from build stages
+COPY --from=build-client /client/dist /app/client/dist
+COPY --from=build-server /server /app
+COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
+
+# Copy S6 overlay service definitions and defaults
+COPY root/ /
+
+# WORKAROUND: Move migrations to /defaults for Windows Docker Desktop compatibility
+# This prevents audiobookshelf from trying to copy FROM /app/server/migrations
+RUN mkdir -p /defaults/migrations && \
+    cp -r /app/server/migrations/* /defaults/migrations/ && \
+    rm -rf /app/server/migrations/* && \
+    echo "Migrations moved to /defaults/migrations"
+
+# Set permissions for S6 services
 RUN \
-  echo "**** updating vulnerable npm packages ****" && \
-  npm audit --json > /tmp/audit-before.json || true && \
-  echo "**** updating axios to fix CVE-2025-27152, CVE-2025-58754, CVE-2023-45857 ****" && \
-  npm install axios@^1.7.9 --save --package-lock-only && \
-  echo "**** updating cookie to fix CVE-2024-47764 ****" && \
-  npm install cookie@^0.7.2 --save --package-lock-only && \
-  echo "**** updating express to fix CVE-2024-29041, CVE-2024-43796 ****" && \
-  npm install express@^4.21.1 --save --package-lock-only && \
-  echo "**** updating ip to fix CVE-2024-29415, CVE-2023-42282 ****" && \
-  npm install ip@^2.0.1 --save --package-lock-only && \
-  echo "**** updating path-to-regexp to fix CVE-2024-45296, CVE-2024-52798 ****" && \
-  npm install path-to-regexp@^8.2.0 --save --package-lock-only && \
-  echo "**** updating body-parser to fix CVE-2024-45590 ****" && \
-  npm install body-parser@^1.20.3 --save --package-lock-only && \
-  echo "**** updating follow-redirects to fix CVE-2024-28849 ****" && \
-  npm install follow-redirects@^1.15.9 --save --package-lock-only && \
-  echo "**** updating form-data to fix CVE-2025-7783 ****" && \
-  npm install form-data@^4.0.1 --save --package-lock-only && \
-  echo "**** updating jose to fix CVE-2024-28176 ****" && \
-  npm install jose@^5.9.6 --save --package-lock-only && \
-  echo "**** updating on-headers to fix CVE-2025-7339 ****" && \
-  npm install on-headers@^1.1.0 --save --package-lock-only && \
-  echo "**** updating send to fix CVE-2024-43799 ****" && \
-  npm install send@^0.19.0 --save --package-lock-only && \
-  echo "**** updating serve-static to fix CVE-2024-43800 ****" && \
-  npm install serve-static@^1.16.2 --save --package-lock-only && \
-  echo "**** updating tar to fix CVE-2024-28863 ****" && \
-  npm install tar@^7.4.3 --save --package-lock-only && \
-  echo "**** updating tar-fs to fix CVE-2025-48387 ****" && \
-  npm install tar-fs@^3.0.6 --save --package-lock-only && \
-  echo "**** updating ws to fix CVE-2024-37890 ****" && \
-  npm install ws@^8.18.0 --save --package-lock-only && \
-  echo "**** updating brace-expansion to fix CVE-2025-5889 ****" && \
-  npm install brace-expansion@^2.0.1 --save --package-lock-only && \
-  echo "**** updating semver to fix CVE-2022-25883 ****" && \
-  npm install semver@^7.6.4 --save --package-lock-only && \
-  echo "**** updating cross-spawn to fix ReDoS vulnerability ****" && \
-  npm install cross-spawn@^7.0.6 --save --package-lock-only && \
-  echo "**** updating braces to fix CVE-2024-4068 ****" && \
-  npm install braces@^3.0.3 --save --package-lock-only && \
-  echo "**** updating serialize-javascript to fix XSS vulnerability ****" && \
-  npm install serialize-javascript@^6.0.2 --save --package-lock-only && \
-  echo "**** updating nanoid to fix non-integer values vulnerability ****" && \
-  npm install nanoid@^5.0.9 --save --package-lock-only && \
-  echo "**** updating @babel/helpers to fix CVE-2025-27789 ****" && \
-  npm install @babel/helpers@^7.26.10 --save --package-lock-only && \
-  echo "**** installing updated packages ****" && \
-  npm install --production --no-optional --ignore-scripts && \
-  echo "**** manually fixing critical nested dependencies ****" && \
-  echo "**** replacing vulnerable cookie@0.4.x with secure cookie@0.7.2 in nested locations ****" && \
-  npm install cookie@0.7.2 --no-save && \
-  rm -rf node_modules/cookie-parser/node_modules/cookie 2>/dev/null || true && \
-  rm -rf node_modules/engine.io/node_modules/cookie 2>/dev/null || true && \
-  rm -rf node_modules/express-session/node_modules/cookie 2>/dev/null || true && \
-  mkdir -p node_modules/cookie-parser/node_modules node_modules/engine.io/node_modules node_modules/express-session/node_modules && \
-  cp -r node_modules/cookie node_modules/cookie-parser/node_modules/ && \
-  cp -r node_modules/cookie node_modules/engine.io/node_modules/ && \
-  cp -r node_modules/cookie node_modules/express-session/node_modules/ && \
-  echo "**** manually replacing vulnerable ws packages in nested locations ****" && \
-  npm install ws@8.18.0 --no-save && \
-  rm -rf node_modules/engine.io/node_modules/ws 2>/dev/null || true && \
-  mkdir -p node_modules/engine.io/node_modules && \
-  cp -r node_modules/ws node_modules/engine.io/node_modules/ && \
-  echo "**** manually replacing path-to-regexp packages ****" && \
-  npm install path-to-regexp@8.2.0 --no-save && \
-  find node_modules -name "path-to-regexp" -type d | while read -r dir; do \
-    if [ "$dir" != "node_modules/path-to-regexp" ]; then \
-      rm -rf "$dir" 2>/dev/null || true; \
-      mkdir -p "$(dirname "$dir")"; \
-      cp -r node_modules/path-to-regexp "$dir"; \
-    fi; \
-  done && \
-  echo "**** updating ip to latest available version ****" && \
-  npm install ip@latest --save && \
-  echo "**** final nested dependency fixes for remaining vulnerabilities ****" && \
-  npm install semver@7.6.4 ws@8.18.0 serialize-javascript@6.0.2 nanoid@5.0.9 --no-save && \
-  echo "**** cleanup vulnerable nested versions ****" && \
-  find node_modules -name "package.json" -exec grep -l '"version": "7\.0\.0"' {} \; | grep semver | head -5 | while read -r file; do \
-    dir=$(dirname "$file"); \
-    if [ "$dir" != "node_modules/semver" ]; then \
-      rm -rf "$dir" 2>/dev/null || true; \
-      mkdir -p "$dir" && cp -r node_modules/semver/* "$dir/"; \
-    fi; \
-  done 2>/dev/null || true && \
-  find node_modules -name "package.json" -exec grep -l '"version": "8\.11\.0"' {} \; | grep ws | head -5 | while read -r file; do \
-    dir=$(dirname "$file"); \
-    if [ "$dir" != "node_modules/ws" ]; then \
-      rm -rf "$dir" 2>/dev/null || true; \
-      mkdir -p "$dir" && cp -r node_modules/ws/* "$dir/"; \
-    fi; \
-  done 2>/dev/null || true && \
-  echo "**** verifying application functionality ****" && \
-  node -e "console.log('Node.js basic test passed')" && \
-  echo "**** cleanup npm cache and tmp files ****" && \
-  npm cache clean --force && \
-  rm -rf /tmp/* /app/.npm && \
-  echo "✓ Security patches applied successfully"
+  find /etc/s6-overlay/s6-rc.d -name "run" -exec chmod 755 {} \; && \
+  find /etc/s6-overlay/s6-rc.d -name "up" -exec chmod 644 {} \; && \
+  find /etc/s6-overlay/s6-rc.d -name "type" -exec chmod 644 {} \;
 
-# Copy S6 overlay services and scripts with proper ownership
-COPY --chown=root:root root/ /
+# Set ownership for application directory
+RUN lsiown -R abc:abc /app /defaults
 
-# Set proper permissions for S6 scripts (LinuxServer.io standard)
-RUN find /etc/s6-overlay -name "run" -exec chmod 755 {} \; && \
-    find /etc/s6-overlay -name "up" -exec chmod 755 {} \; && \
-    find /etc/s6-overlay -name "finish" -exec chmod 755 {} \; && \
-    chmod -R 755 /etc/s6-overlay/s6-rc.d
+# Environment variables (matching official audiobookshelf + LinuxServer.io)
+ENV PORT=80 \
+    NODE_ENV=production \
+    CONFIG_PATH=/config \
+    METADATA_PATH=/config/metadata \
+    SOURCE=docker \
+    NUSQLITE3_DIR=${NUSQLITE3_DIR} \
+    NUSQLITE3_PATH=${NUSQLITE3_PATH} \
+    AUDIOBOOKSHELF_VERSION=${AUDIOBOOKSHELF_VERSION}
 
-# Expose non-privileged port
+# Expose port
 EXPOSE 80
 
-# Define volumes for persistent data
-VOLUME ["/config", "/audiobooks", "/podcasts", "/metadata"]
+# Volumes
+VOLUME /config /metadata /audiobooks /podcasts
 
-# Enhanced health check following LinuxServer.io patterns
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:80/ping || curl -f http://localhost:80/ || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:80/healthcheck || exit 1

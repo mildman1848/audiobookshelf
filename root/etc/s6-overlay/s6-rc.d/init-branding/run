@@ -1,0 +1,31 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+cat << 'BRAND'
+══════════════════════════════════════════════════════════════════════════════════════════
+███╗   ███╗██╗██╗     ██████╗ ███╗   ███╗ █████╗ ███╗   ██╗ ██╗ █████╗  ██╗  ██╗ █████╗
+████╗ ████║██║██║     ██╔══██╗████╗ ████║██╔══██╗████╗  ██║███║██╔══██╗ ██║  ██║██╔══██╗
+██╔████╔██║██║██║     ██║  ██║██╔████╔██║███████║██╔██╗ ██║╚██║╚█████╔╝ ███████║╚█████╔╝
+██║╚██╔╝██║██║██║     ██║  ██║██║╚██╔╝██║██╔══██║██║╚██╗██║ ██║██╔══██╗ ╚════██║██╔══██╗
+██║ ╚═╝ ██║██║███████╗██████╔╝██║ ╚═╝ ██║██║  ██║██║ ╚████║ ██║╚█████╔╝      ██║╚█████╔╝
+╚═╝     ╚═╝╚═╝╚══════╝╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═╝ ╚════╝       ╚═╝ ╚════╝
+══════════════════════════════════════════════════════════════════════════════════════════
+
+  📚 Audiobookshelf Enhanced Container 📚
+  Enhanced Security & Docker Secrets Implementation
+
+  Based on LinuxServer.io Alpine + S6 Overlay v3
+  Licensed under GPL-3.0
+
+  Original Project: https://github.com/advplyr/audiobookshelf
+  Original License: GPL-3.0
+  Original Docs: https://www.audiobookshelf.org/docs
+══════════════════════════════════════════════════════════════════════════════════════════
+
+To support the original Audiobookshelf project:
+https://github.com/advplyr/audiobookshelf
+
+══════════════════════════════════════════════════════════════════════════════════════════
+BRAND
+
+echo "✓ Branding displayed successfully"
