@@ -17,7 +17,7 @@ ARG AUDIOBOOKSHELF_VERSION
 
 WORKDIR /client
 RUN apk add --no-cache curl && \
-    curl -fsSL https://github.com/advplyr/audiobookshelf/archive/refs/tags/v${AUDIOBOOKSHELF_VERSION}.tar.gz | tar -xz -C /tmp && \
+    curl -fsSL https://codeload.github.com/advplyr/audiobookshelf/tar.gz/refs/tags/v${AUDIOBOOKSHELF_VERSION} | tar -xz -C /tmp && \
     cp -r /tmp/audiobookshelf-${AUDIOBOOKSHELF_VERSION}/client/* /client/ && \
     rm -rf /tmp/audiobookshelf-*
 
@@ -41,7 +41,7 @@ RUN apk add --no-cache --update \
     unzip
 
 WORKDIR /server
-RUN curl -fsSL https://github.com/advplyr/audiobookshelf/archive/refs/tags/v${AUDIOBOOKSHELF_VERSION}.tar.gz | tar -xz -C /tmp && \
+RUN curl -fsSL https://codeload.github.com/advplyr/audiobookshelf/tar.gz/refs/tags/v${AUDIOBOOKSHELF_VERSION} | tar -xz -C /tmp && \
     cp /tmp/audiobookshelf-${AUDIOBOOKSHELF_VERSION}/index.js /tmp/audiobookshelf-${AUDIOBOOKSHELF_VERSION}/package*.json /server/ && \
     cp -r /tmp/audiobookshelf-${AUDIOBOOKSHELF_VERSION}/server /server/server && \
     rm -rf /tmp/audiobookshelf-*
