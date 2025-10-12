@@ -74,6 +74,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Read VERSION file
+        id: version
+        run: |
+          if [ -f VERSION ]; then
+            VERSION=$(cat VERSION | tr -d '\n\r')
+          else
+            VERSION="2.29.0-automation.2"
+          fi
+          echo "audiobookshelf_version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Audiobookshelf version: ${VERSION}"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -92,8 +103,8 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VERSION=test-${{ github.sha }}
             VCS_REF=${{ github.sha }}
-            AUDIOBOOKSHELF_VERSION=$(cat VERSION || echo "2.29.0-automation.2")
-            PROJECT_VERSION=$(cat VERSION || echo "2.29.0-automation.2")
+            AUDIOBOOKSHELF_VERSION=${{ steps.version.outputs.audiobookshelf_version }}
+            PROJECT_VERSION=${{ steps.version.outputs.audiobookshelf_version }}
 
   integration-test:
     name: Integration Tests
