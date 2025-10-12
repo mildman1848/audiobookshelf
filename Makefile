@@ -1,4 +1,4 @@
-.PHONY: build build-multiarch test validate security-scan push clean help setup env-setup env-validate secrets-generate secrets-rotate secrets-clean secrets-info start stop restart status logs shell
+.PHONY: build build-multiarch test validate security-scan push clean help setup env-setup env-validate secrets-generate secrets-generate-ci secrets-rotate secrets-clean secrets-info start stop restart status logs shell
 
 IMAGE_NAME := mildman1848/audiobookshelf
 VERSION := $(shell cat VERSION)
@@ -156,6 +156,17 @@ secrets-generate:
 	@echo "  - audiobookshelf_jwt_secret.txt (512-bit)"
 	@echo "  - audiobookshelf_session_secret.txt (256-bit)"
 	@echo "$(YELLOW)⚠️  Keep these secrets secure and never commit them to version control!$(NC)"
+
+## secrets-generate-ci: Generate secrets for CI/CD environments (simplified, no ownership changes)
+secrets-generate-ci:
+	@echo "$(GREEN)Generating secrets for CI environment...$(NC)"
+	@mkdir -p secrets
+	@echo "Generating JWT secret (512-bit)..."
+	@openssl rand -base64 64 | tr -d "=+/\n" | head -c 64 > secrets/audiobookshelf_jwt_secret.txt
+	@echo "Generating session secret (256-bit)..."
+	@openssl rand -base64 32 | tr -d "=+/\n" | head -c 32 > secrets/audiobookshelf_session_secret.txt
+	@chmod 600 secrets/audiobookshelf_*.txt || true
+	@echo "$(GREEN)✓ CI secrets generated successfully!$(NC)"
 
 ## secrets-rotate: Rotate existing secrets (keeps backups)
 secrets-rotate:
