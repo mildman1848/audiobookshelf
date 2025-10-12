@@ -14,6 +14,30 @@
 
 **Self-hosted audiobook and podcast server based on LinuxServer.io Alpine baseimage.**
 
+## 📦 Available Registries
+
+The audiobookshelf container is available on multiple registries:
+
+```bash
+# Docker Hub (recommended)
+docker pull mildman1848/audiobookshelf:latest
+docker pull mildman1848/audiobookshelf:2.30.0
+
+# GitHub Container Registry
+docker pull ghcr.io/mildman1848/audiobookshelf:latest
+docker pull ghcr.io/mildman1848/audiobookshelf:2.30.0
+
+# GitLab Container Registry
+docker pull registry.gitlab.com/mildman1848/audiobookshelf:latest
+docker pull registry.gitlab.com/mildman1848/audiobookshelf:2.30.0
+
+# Codeberg Container Registry
+docker pull codeberg.org/mildman1848/audiobookshelf:latest
+docker pull codeberg.org/mildman1848/audiobookshelf:2.30.0
+```
+
+**Multi-Architecture Support:** All images support `linux/amd64` and `linux/arm64`
+
 ## Quick Start
 
 ```bash
