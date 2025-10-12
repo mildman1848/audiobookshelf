@@ -17,7 +17,10 @@ ARG AUDIOBOOKSHELF_VERSION
 
 WORKDIR /client
 RUN apk add --no-cache git && \
-    git clone --depth 1 --branch v${AUDIOBOOKSHELF_VERSION} https://github.com/advplyr/audiobookshelf.git /tmp/audiobookshelf && \
+    git clone --depth 1 https://github.com/advplyr/audiobookshelf.git /tmp/audiobookshelf && \
+    cd /tmp/audiobookshelf && \
+    git fetch --depth 1 origin tag v${AUDIOBOOKSHELF_VERSION} && \
+    git checkout v${AUDIOBOOKSHELF_VERSION} && \
     cp -r /tmp/audiobookshelf/client/* /client/ && \
     rm -rf /tmp/audiobookshelf
 
@@ -42,7 +45,10 @@ RUN apk add --no-cache --update \
     unzip
 
 WORKDIR /server
-RUN git clone --depth 1 --branch v${AUDIOBOOKSHELF_VERSION} https://github.com/advplyr/audiobookshelf.git /tmp/audiobookshelf && \
+RUN git clone --depth 1 https://github.com/advplyr/audiobookshelf.git /tmp/audiobookshelf && \
+    cd /tmp/audiobookshelf && \
+    git fetch --depth 1 origin tag v${AUDIOBOOKSHELF_VERSION} && \
+    git checkout v${AUDIOBOOKSHELF_VERSION} && \
     cp /tmp/audiobookshelf/index.js /tmp/audiobookshelf/package*.json /server/ && \
     cp -r /tmp/audiobookshelf/server /server/server && \
     rm -rf /tmp/audiobookshelf
