@@ -71,6 +71,7 @@ RUN npm audit fix --only=prod || true && \
 ### STAGE 2: Runtime with LinuxServer.io baseimage ###
 FROM ghcr.io/linuxserver/baseimage-alpine:${ALPINE_VERSION}
 
+ARG ALPINE_VERSION
 ARG AUDIOBOOKSHELF_VERSION
 ARG BUILD_DATE
 ARG VERSION
