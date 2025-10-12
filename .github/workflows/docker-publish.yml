@@ -372,11 +372,40 @@ jobs:
           short-description: "Self-hosted audiobook and podcast server - LinuxServer.io based container"
         continue-on-error: true
 
+  # Link GHCR package to repository and make public
+  link-package:
+    name: Link and Publish GHCR Package
+    runs-on: ubuntu-latest
+    needs: merge
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    permissions:
+      packages: write
+    steps:
+      - name: Link package to repository
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GHCR_TOKEN }}
+          script: |
+            try {
+              // Link package to repository
+              await github.rest.packages.updatePackageVersionForAuthenticatedUser({
+                package_type: 'container',
+                package_name: 'audiobookshelf',
+                version_id: 'latest',
+                body: {
+                  visibility: 'public'
+                }
+              });
+              console.log('✅ Package linked and made public');
+            } catch (error) {
+              console.log('ℹ️ Package visibility update:', error.message);
+            }
+
   # Cleanup old packages (GHCR)
   cleanup:
     name: Cleanup Old Packages
     runs-on: ubuntu-latest
-    needs: sbom
+    needs: link-package
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
