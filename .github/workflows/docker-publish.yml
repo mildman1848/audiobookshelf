@@ -382,7 +382,7 @@ jobs:
       packages: write
     steps:
       - name: Link package to repository
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GHCR_TOKEN }}
           script: |
