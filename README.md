@@ -1,5 +1,7 @@
 # Audiobookshelf - LinuxServer.io Edition
 
+🇩🇪 **German Version:** [README.DE.md](README.DE.md)
+
 [![GitHub Release](https://img.shields.io/github/v/release/mildman1848/audiobookshelf?style=for-the-badge&logo=github&color=005AA4)](https://github.com/mildman1848/audiobookshelf/releases)
 [![Docker Hub Pulls](https://img.shields.io/docker/pulls/mildman1848/audiobookshelf?style=for-the-badge&logo=docker&logoColor=fff&color=005AA4)](https://hub.docker.com/r/mildman1848/audiobookshelf)
 [![Docker Image Size](https://img.shields.io/docker/image-size/mildman1848/audiobookshelf/latest?style=for-the-badge&logo=docker&logoColor=fff&color=005AA4)](https://hub.docker.com/r/mildman1848/audiobookshelf)

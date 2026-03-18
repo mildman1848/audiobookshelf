@@ -1,5 +1,7 @@
 # Security Policy
 
+🇩🇪 **Deutsche Version:** [SECURITY.DE.md](SECURITY.DE.md)
+
 > 🇬🇧 **English Version** | 🇩🇪 **[Deutsche Version](SECURITY.de.md)**
 
 ## Reporting Security Vulnerabilities
