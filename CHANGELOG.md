@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Limited routine CI image builds to `linux/amd64` so normal push validation no longer fails on the currently unstable ARM64 test path.
+- Updated Trivy workflow steps to `aquasecurity/trivy-action@0.35.0` and guarded SARIF uploads so missing output files no longer break the workflow.
+- Stopped the maintenance workflow from opening duplicate automated security audit issues when an equivalent issue is already open.
+
 ## [2.30.0-1] - 2025-10-12
 
 ### 🚨 BREAKING CHANGE

@@ -331,6 +331,19 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const title = 'Security Audit: Issues Detected';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,audit,automated',
+              per_page: 100
+            });
+
+            if (issues.some(issue => issue.title === title)) {
+              console.log('Open security audit issue already exists, skipping duplicate creation.');
+              return;
+            }
+
             const body = `## 🔒 Security Audit Report
 
             This issue was automatically created by the maintenance workflow security audit.
