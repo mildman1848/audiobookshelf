@@ -10,7 +10,7 @@
 [![CI Status](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/ci.yml?branch=main&style=flat-square&logo=github&label=CI)](https://github.com/mildman1848/audiobookshelf/actions/workflows/ci.yml)
 [![Security Scan](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/security.yml?branch=main&style=flat-square&logo=security&label=Security)](https://github.com/mildman1848/audiobookshelf/actions/workflows/security.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/codeql.yml?branch=main&style=flat-square&logo=github&label=CodeQL)](https://github.com/mildman1848/audiobookshelf/actions/workflows/codeql.yml)
-[![Upstream Version](https://img.shields.io/badge/audiobookshelf-v2.30.0-blue?style=flat-square&logo=github)](https://github.com/advplyr/audiobookshelf/releases/tag/v2.30.0)
+[![Upstream Version](https://img.shields.io/badge/audiobookshelf-v2.33.0-blue?style=flat-square&logo=github)](https://github.com/advplyr/audiobookshelf/releases/tag/v2.33.0)
 
 ---
 
@@ -141,7 +141,7 @@ docker build -t mildman1848/audiobookshelf:latest .
 
 # Mit spezifischen Argumenten
 docker build \
-  --build-arg AUDIOBOOKSHELF_VERSION=v2.29.0 \
+  --build-arg AUDIOBOOKSHELF_VERSION=v2.33.0 \
   --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
   -t mildman1848/audiobookshelf:latest .
 ```
@@ -339,7 +339,7 @@ make secrets-generate
 make env-validate
 
 # 6. Spezifische Image-Tags verwenden
-docker run mildman1848/audiobookshelf:v2.29.0  # statt :latest
+docker run mildman1848/audiobookshelf:v2.33.0  # statt :latest
 
 # 7. Container Health überwachen
 make status  # Container Status und Health Checks

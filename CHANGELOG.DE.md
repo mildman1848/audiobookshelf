@@ -9,3 +9,4 @@ Alle wichtigen Änderungen am Audiobookshelf-Container werden in dieser Datei do
 - Routine-CI-Builds auf `linux/amd64` begrenzt, damit normale Push-Validierungen nicht mehr am derzeit instabilen ARM64-Testpfad scheitern.
 - Trivy-Workflows auf `aquasecurity/trivy-action@0.35.0` aktualisiert und SARIF-Uploads gegen fehlende Ausgabedateien abgesichert.
 - Den Maintenance-Workflow so angepasst, dass keine doppelten automatischen Security-Audit-Issues mehr erzeugt werden, wenn bereits ein passendes Issue offen ist.
+- Audiobookshelf im Build, in der Dokumentation und im Branding von `2.30.0` auf `2.33.0` angehoben, um die aktuellen Upstream-Fixes mitzunehmen.

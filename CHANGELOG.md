@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Trivy workflow steps to `aquasecurity/trivy-action@0.35.0` and guarded SARIF uploads so missing output files no longer break the workflow.
 - Stopped the maintenance workflow from opening duplicate automated security audit issues when an equivalent issue is already open.
 
+### Changed
+
+- Updated audiobookshelf from `2.30.0` to `2.33.0` across the build, docs, and branding to pick up the latest upstream fixes.
+
 ## [2.30.0-1] - 2025-10-12
 
 ### 🚨 BREAKING CHANGE

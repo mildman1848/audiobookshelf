@@ -10,7 +10,7 @@
 [![CI Status](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/ci.yml?branch=main&style=flat-square&logo=github&label=CI)](https://github.com/mildman1848/audiobookshelf/actions/workflows/ci.yml)
 [![Security Scan](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/security.yml?branch=main&style=flat-square&logo=security&label=Security)](https://github.com/mildman1848/audiobookshelf/actions/workflows/security.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/mildman1848/audiobookshelf/codeql.yml?branch=main&style=flat-square&logo=github&label=CodeQL)](https://github.com/mildman1848/audiobookshelf/actions/workflows/codeql.yml)
-[![Upstream Version](https://img.shields.io/badge/audiobookshelf-v2.30.0-blue?style=flat-square&logo=github)](https://github.com/advplyr/audiobookshelf/releases/tag/v2.30.0)
+[![Upstream Version](https://img.shields.io/badge/audiobookshelf-v2.33.0-blue?style=flat-square&logo=github)](https://github.com/advplyr/audiobookshelf/releases/tag/v2.33.0)
 
 ---
 
@@ -23,19 +23,19 @@ The audiobookshelf container is available on multiple registries:
 ```bash
 # Docker Hub (recommended)
 docker pull mildman1848/audiobookshelf:latest
-docker pull mildman1848/audiobookshelf:2.30.0
+docker pull mildman1848/audiobookshelf:2.33.0
 
 # GitHub Container Registry
 docker pull ghcr.io/mildman1848/audiobookshelf:latest
-docker pull ghcr.io/mildman1848/audiobookshelf:2.30.0
+docker pull ghcr.io/mildman1848/audiobookshelf:2.33.0
 
 # GitLab Container Registry
 docker pull registry.gitlab.com/mildman1848/audiobookshelf:latest
-docker pull registry.gitlab.com/mildman1848/audiobookshelf:2.30.0
+docker pull registry.gitlab.com/mildman1848/audiobookshelf:2.33.0
 
 # Codeberg Container Registry
 docker pull codeberg.org/mildman1848/audiobookshelf:latest
-docker pull codeberg.org/mildman1848/audiobookshelf:2.30.0
+docker pull codeberg.org/mildman1848/audiobookshelf:2.33.0
 ```
 
 **Multi-Architecture Support:** All images support `linux/amd64` and `linux/arm64`

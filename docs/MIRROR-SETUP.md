@@ -104,7 +104,7 @@ gh workflow run mirror-sync.yml
 
 **Manual Trigger:**
 ```bash
-gh workflow run mirror-registry.yml --field source_tag=2.30.0
+gh workflow run mirror-registry.yml --field source_tag=2.33.0
 ```
 
 ## Accessing Mirrored Resources
@@ -120,7 +120,7 @@ https://gitlab.com/<GITLAB_USERNAME>/audiobookshelf
 ```bash
 # Pull from GitLab
 docker pull registry.gitlab.com/<GITLAB_USERNAME>/audiobookshelf:latest
-docker pull registry.gitlab.com/<GITLAB_USERNAME>/audiobookshelf:2.30.0
+docker pull registry.gitlab.com/<GITLAB_USERNAME>/audiobookshelf:2.33.0
 ```
 
 ### Codeberg
@@ -134,7 +134,7 @@ https://codeberg.org/<CODEBERG_USERNAME>/audiobookshelf
 ```bash
 # Pull from Codeberg
 docker pull codeberg.org/<CODEBERG_USERNAME>/audiobookshelf:latest
-docker pull codeberg.org/<CODEBERG_USERNAME>/audiobookshelf:2.30.0
+docker pull codeberg.org/<CODEBERG_USERNAME>/audiobookshelf:2.33.0
 ```
 
 ## Monitoring

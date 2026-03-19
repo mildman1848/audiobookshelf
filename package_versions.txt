@@ -1,4 +1,4 @@
-# Package Versions - audiobookshelf v2.30.0
+# Package Versions - audiobookshelf v2.33.0
 # Generated: 2025-10-11
 # Base Image: LinuxServer.io Alpine 3.22
 
@@ -172,7 +172,7 @@ zlib-1.3.1-r2
 zstd-libs-1.5.7-r0
 
 === Node.js Application Packages (npm) ===
-audiobookshelf@2.30.0 /app
+audiobookshelf@2.33.0 /app
 +-- axios@0.27.2
 +-- cookie-parser@1.4.7
 +-- express-rate-limit@7.5.1
