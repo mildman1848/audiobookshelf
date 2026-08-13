@@ -205,12 +205,25 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:sbom
           cache-from: type=gha
 
+      - name: Install Syft
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/anchore/syft/main/install.sh -o /tmp/install-syft.sh
+          for attempt in 1 2 3; do
+            if sh /tmp/install-syft.sh -b /usr/local/bin v1.42.3; then
+              syft version
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          echo "Syft installation failed after retries" >&2
+          exit 1
+
       - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:sbom
-          format: spdx-json
-          output-file: /tmp/sbom.spdx.json
+        run: |
+          set -euo pipefail
+          syft ${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf:sbom -o spdx-json=/tmp/sbom.spdx.json
+          test -s /tmp/sbom.spdx.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v7
